@@ -1,0 +1,20 @@
+[project]
+name = "judgment-app"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "hsiaomt", email = "mark5324133@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=3.0.5",
+    "requests>=2.34.2",
+]
+
+[project.scripts]
+judgment-app = "judgment_app:main"
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"
