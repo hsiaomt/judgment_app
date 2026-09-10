@@ -23,9 +23,9 @@ def extract_judgment(json_file: Path) -> dict:
     with open(json_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    content = data["JFULLX"]["JFULLCONTENT"]
+    #content = data["JFULLX"]["JFULLCONTENT"]
     # 只保留法院判決正文
-    content = extract_court_judgment(content)
+    #content = extract_court_judgment(content)
 
     return {
         "jid": data["JID"],
@@ -34,7 +34,7 @@ def extract_judgment(json_file: Path) -> dict:
         "case_no": data["JNO"],
         "date": data["JDATE"],
         "title": data["JTITLE"],
-        "text": content,
+        "content": data["JFULLX"]["JFULLCONTENT"],
     }
 
 def extract_law_and_crime(text: str) -> tuple[str | None, str | None]:

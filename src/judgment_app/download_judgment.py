@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 def main() -> None:
-    token = ""
+    token = get_token()
     folder = Path(r"C:\Users\user\Desktop\Judgments")
     save_all_judgments(token, folder)
 
