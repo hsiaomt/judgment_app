@@ -1,11 +1,15 @@
 import requests
 import json
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def main() -> None:
     token = get_token()
-    folder = Path(r"C:\Users\user\Desktop\Judgments")
-    save_all_judgments(token, folder)
+    #folder = Path(r"C:\Users\user\Desktop\Judgments")
+    #save_all_judgments(token, folder)
 
 def save_all_judgments(token, folder):
     jid_json = get_jid_json(token)
@@ -60,21 +64,29 @@ def get_jid_json(token):
         "token": token
     }
     response = requests.post(url, json=data)
-    jid_json = response.json()
-    #print(response.status_code)
-    #print(jid_json)
-    return jid_json[0]
+    return response.json()[0]
 
 def get_token():
+    username = os.getenv("JUDICIAL_USERNAME")
+    password = os.getenv("JUDICIAL_PASSWORD")
+
+    if not username or not password:
+        raise RuntimeError(
+            "請設定 JUDICIAL_USERNAME 和 JUDICIAL_PASSWORD 環境變數"
+        )
+
     url = "https://data.judicial.gov.tw/jdg/api/Auth"
     data = {
-        "user": "",
-        "password": ""
+        "user": username,
+        "password": password
     }
-    response = requests.post(url, json=data)
-    token = response.json()["Token"]
-    print(token)
-    return token
+    response = requests.post(
+        url,
+        json=data,
+        timeout=30
+    )
+    response.raise_for_status()
+    return response.json()["Token"]
 
 if __name__ == "__main__":
     main()

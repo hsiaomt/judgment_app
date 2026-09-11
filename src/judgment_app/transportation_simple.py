@@ -16,7 +16,9 @@ PATTERNS = [
         r"(?m)^\s*(?:[一二三四五六七八九十]+、\s*)?論罪(?:科刑)?.*$"
     )),
     ("finish", re.compile(r"中\s*華\s*民\s*國")),
-    ("attachment", re.compile(r"附件：")),
+    ("attachment", re.compile(
+        r"(?m)^\s*[^\w\u4e00-\u9fff]*附\s*件.*$"
+    )),
 ]
 
 TEST_PATTERN = re.compile(r"12345")
@@ -168,9 +170,6 @@ def split_judgment(content: str) -> dict[str, str]:
 
     # 取得頭尾中間的內容
     return content[head_match.end():tail_match.start()].strip(), content[tail_match.end():].strip()'''
-
-'''def remove_whitespace(content: str) -> str:
-    return re.sub(r"\s+", "", content)'''
 
 class JudgmentTextError(Exception):
 
