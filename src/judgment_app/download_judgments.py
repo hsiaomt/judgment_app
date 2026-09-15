@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 from datetime import date
 from dotenv import load_dotenv, set_key
+from judgment_app.exceptions import *
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ENV_FILE = PROJECT_ROOT / ".env"
@@ -33,7 +34,7 @@ def save_all_judgments(token, folder) -> None:
     exist_num = 0
     not_criminal_num = 0
     finish_num = 0
-    error_list = []
+    error_dict = {}
     except_dict = {}
     for i, jid in enumerate(jid_list, start=1):
         file_path = folder / f"{jid}.json"
@@ -49,29 +50,47 @@ def save_all_judgments(token, folder) -> None:
 
         try:
             judgment = get_judgment(token, jid)
-            if judgment is None:
+            if "error" in judgment:
+                error_dict[jid] = judgment["error"]
                 print("  → error key")
-                error_list.append(jid)
                 continue
             save_json(file_path, judgment)
             finish_num += 1
             print("  → 完成")
+        except ApiResponseError as e:
+            print(f"  → API 回應錯誤：{e}")
+            except_dict[jid] = {
+                "type": type(e).__name__,
+                "message": str(e),
+            }
         except Exception as e:
             print(f"  → 發生錯誤：{e}")
-            except_dict[jid] = type(e).__name__
+            cause = e.__cause__
+            except_dict[jid] = {
+                "type": type(e).__name__,
+                "message": str(e),
+                "cause": (
+                    {
+                        "type": type(cause).__name__,
+                        "message": str(cause),
+                    }
+                    if cause is not None
+                    else None
+                ),
+            }
 
     print(f"total: {len(jid_list)}件")
     print(f"exist: {exist_num}件")
     print(f"not criminal: {not_criminal_num}件")
     print(f"finish: {finish_num}件")
-    print(f"error: {len(error_list)}件")
+    print(f"error: {len(error_dict)}件")
     print(f"exception: {len(except_dict)}件")
 
     # 把失敗的 JID 存起來
-    if error_list:
+    if error_dict:
         save_json(
             folder / "error.json",
-            error_list
+            error_dict
         )
     if except_dict:
         save_json(
@@ -90,20 +109,34 @@ def save_json(file_path, saved_json) -> None:
         )
     tmp_path.replace(file_path)
     
-def get_judgment(token, jid) -> dict | None:
+def get_judgment(token, jid) -> dict:
     url = "https://data.judicial.gov.tw/jdg/api/JDoc"
     payload  = {
         "token": token,
         "j": jid
     }
-    data = post_json(url, payload, retry_safe=True)
+    data = require_type(
+        post_json(url, payload, retry_safe=True), 
+        dict, 
+        "JDoc",
+    )
 
-    if not isinstance(data, dict):
-        raise ValueError("JDoc 回應格式錯誤：預期為物件")
-    if "error" in data:
-        return None
-    
-    print(f"取得完成：{jid}")
+    actual_jid = require_type(data.get("jid"), str, "JDoc")
+    if actual_jid != jid:
+        raise ApiResponseError(
+            f"JDoc：JID 不一致，預期 {jid}，實際 {actual_jid}"
+        )
+
+    required_fields = ("JFULLX", "JID", "JYEAR", "JCASE", "JNO", "JDATE", "JTITLE")
+    missing = [key for key in required_fields if key not in data]
+    if missing:
+        raise ApiResponseError(
+            f"JDoc：缺少欄位 {', '.join(missing)}"
+        )
+
+    full_x = require_type(data["JFULLX"], dict, "JDoc.JFULLX")
+    require_type(full_x["JFULLCONTENT"], str, "JDoc.JFULLX.JFULLCONTENT")
+
     return data
 
 def get_jid_json(token) -> dict:
@@ -113,11 +146,13 @@ def get_jid_json(token) -> dict:
         {"token": token},
         retry_safe=True,
     )
-
-    if not isinstance(data, list) or not data:
-        raise ValueError("JList 回應格式錯誤或清單為空")
-    if not isinstance(data[0], dict):
-        raise ValueError("JList 第一筆資料不是物件")
+    require_type(data, list, "JList")
+    batch = require_type(data[0], dict, "JList[0]")
+    require_type(batch["date"], str, "JList[0].date")
+    jids = batch.get("list")
+    require_type(jids, list, "JList[0].list")
+    for index, jid in enumerate(jids):
+        require_type(jid, str, f"JList[0].list[{index}]")
     
     return data[0]
 
@@ -149,17 +184,13 @@ def request_new_token() -> str:
         )
 
     url = "https://data.judicial.gov.tw/jdg/api/Auth"
-    data = {
+    payload = {
         "user": username,
         "password": password
     }
-    result = post_json(url, data)
-    token = result.get("Token")
+    data = require_type(post_json(url, payload), dict, "Auth")
 
-    if not isinstance(token, str) or not token:
-        raise ValueError("Auth 回應缺少有效 Token")
-
-    return token
+    return require_type(data["Token"], str, "Auth")
 
 def post_json(
     url: str,
@@ -168,7 +199,7 @@ def post_json(
     retry_safe: bool = False,
 ) -> dict | list:
     """發送 JSON POST；符合條件時最多嘗試三次。"""
-
+    last_error: Exception | None = None
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
             with requests.post(
@@ -186,6 +217,7 @@ def post_json(
         except requests.exceptions.ConnectTimeout as exc:
             # 尚未成功建立連線，可以重試。
             reason = type(exc).__name__
+            last_error = exc
 
         except (
             requests.exceptions.ReadTimeout,
@@ -194,6 +226,7 @@ def post_json(
             if not retry_safe:
                 raise
             reason = type(exc).__name__
+            last_error = exc
 
         except requests.exceptions.HTTPError as exc:
             status = (
@@ -206,6 +239,7 @@ def post_json(
                 raise
 
             reason = f"HTTP {status}"
+            last_error = exc
 
         # JSONDecodeError 等其他例外不會被上述 except 捕捉。
         # 會直接交給呼叫端處理。
@@ -213,7 +247,7 @@ def post_json(
         if attempt == MAX_ATTEMPTS:
             raise RuntimeError(
                 f"請求在 {MAX_ATTEMPTS} 次嘗試後仍失敗：{reason}"
-            )
+            ) from last_error
 
         delay = 2 ** (attempt - 1)
         print(
@@ -235,6 +269,29 @@ def get_judgments_folder() -> Path:
 
     folder.mkdir(parents=True, exist_ok=True)
     return folder
+
+def require_type[T](
+    data: object,
+    expected_type: type[T],
+    endpoint: str,
+    allow_nothing: bool = False,
+) -> T:
+    if not isinstance(data, expected_type):
+        raise ApiResponseError(
+            f"{endpoint}：預期為 {expected_type.__name__}，"
+            f"實際為 {type(data).__name__}"
+        )
+    if not allow_nothing :
+        if expected_type is str and not data.strip():
+            raise ApiResponseError(
+                f"{endpoint}：空白字串"
+            )
+        elif not data:
+            raise ApiResponseError(
+                f"{endpoint}：空白"
+            )
+
+    return data
 
 if __name__ == "__main__":
     main()
