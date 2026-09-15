@@ -1,0 +1,14 @@
+④ 把 token 的取得日期與實際有效性分開
+位置：[get_token() (line 115)](C:/Users/user/Desktop/Python/judgment_app/src/judgment_app/download_judgment.py:115)。
+目前「今天取得的 token」就直接使用，沒有處理同一天內 token 已失效的情況。
+建議在 API 明確回報認證失效時，重新取得 token，並只重送該請求一次；是否需要每日更新，則依 API 的有效期限規則決定。
+**原因：**日期是本地快取策略，伺服器是否接受 token 才是真正的有效性判斷。限制更新次數，則能避免認證持續失敗時無限循環。
+⑤ 讓續跑與錯誤紀錄能反映最新狀態
+位置：[已存在檢查 (line 35)](C:/Users/user/Desktop/Python/judgment_app/src/judgment_app/download_judgment.py:35)、[錯誤紀錄 (line 64)](C:/Users/user/Desktop/Python/judgment_app/src/judgment_app/download_judgment.py:64)。
+目前只要檔案存在就跳過，不確認它是否為有效裁判書；錯誤紀錄也只有部分資訊。例如，第二次執行全部成功，因為沒有寫入新的 error.json，第一次留下的錯誤清單仍會存在。
+建議：
+- 跳過前至少確認 JSON 可讀且包含必要欄位。
+- 每次執行輸出一致的結果摘要。
+- 錯誤保留 JID、階段、類型、訊息及時間。
+- 明確更新已解決的失敗紀錄，讓它可以作為下次重試的依據。
+**原因：**批次下載經常需要重跑。「磁碟上有檔案」與「這筆工作已正確完成」是兩個不同條件。
