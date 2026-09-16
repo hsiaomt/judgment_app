@@ -14,10 +14,10 @@ def main():
         case="訴",
         number=219,
     )
-
+    print(results)
     print(f"共找到 {len(results)} 筆裁判")
     for result in results:
-        print(f"JID：{result['jid']}")
+        print(f"JID：{result}")
         print()
 
 
@@ -130,16 +130,17 @@ def search_judgments(
 
                 jid = params.get("id", [""])[0]
                 fields = jid.split(",")
-                if len(fields) < 5:
+                if len(fields) < 6:
                     raise RuntimeError(f"無法解析 JID：{jid!r}")
 
                 page_jids.append(jid)
                 if jid not in seen_jids:
                     seen_jids.add(jid)
-                    results.append({
-                        "jid": jid,
-                        "date": fields[4],
-                    })
+                    results.append(
+                        #"jid": jid,
+                        #"date": fields[4],
+                        jid,
+                    )
 
             if not page_jids:
                 raise RuntimeError(

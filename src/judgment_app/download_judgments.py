@@ -20,7 +20,10 @@ load_dotenv(ENV_FILE)
 def main() -> None:
     token = get_token()
     folder = get_judgments_folder()
-    save_all_judgments(token, folder)
+    #save_all_judgments(token, folder)
+    jid_json = get_jid_json(token)
+    jid_date = jid_json["date"]
+    save_json(folder / f"{jid_date}.json", jid_json)
 
 def save_all_judgments(token, folder) -> None:
     jid_json = get_jid_json(token)
