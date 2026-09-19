@@ -62,6 +62,7 @@ def main() -> None:
         start_row=4,            # 第一筆資料的 Excel 列號
     )
 
+    print(len(cases))
     for case in cases:
         print(case)
     #print(cases[0])
@@ -73,33 +74,6 @@ class CaseNumber(TypedDict):
     year: int
     case: str
     number: int
-
-
-def _normalize_court(name: str) -> str:
-    return re.sub(r"\s+", "", name).replace("台", "臺")
-
-
-def _court_codes() -> dict[str, str]:
-    codes = {}
-    for code, name in COURT_MAP.items():
-        if not code:
-            continue
-        aliases = {name, name.replace("地方法院", "地院").replace("高等法院", "高院")}
-        if name.startswith(("臺灣", "福建")) and name.endswith("地方法院"):
-            aliases.update({name[2:], name[2:].replace("地方法院", "地院")})
-        for alias in aliases:
-            codes[_normalize_court(alias)] = code
-        codes[code] = code
-    return codes
-
-
-def _column_index(column: str) -> int:
-    if not isinstance(column, str) or not re.fullmatch(r"[A-Za-z]+", column):
-        raise ValueError(f"Excel 欄位必須是英文字母，例如 AL：{column!r}")
-    index = 0
-    for letter in column.upper():
-        index = index * 26 + ord(letter) - ord("A") + 1
-    return index - 1
 
 
 def read_case_numbers(
@@ -117,7 +91,8 @@ def read_case_numbers(
     欄位使用 Excel 字母（例如 AL），start_row 為第一筆資料的列號（從 1 起算）。
     預設讀取第一張工作表，略過第一列標題；範例檔案需設定 start_row=4。
     法院全名、地院／高院簡稱及台／臺寫法會依 COURT_MAP 轉換為代碼。
-    年度、號數轉為整數；保留列順序及重複案號，四欄全空的列略過。
+    年度、號數轉為整數；依四個欄位去除重複案號，保留首次出現的順序。
+    四欄全空的列略過。
     部分欄位空白、未知法院或無效數字會拋出含 Excel 列號的 ValueError。
     .xls 檔使用 xlrd 讀取；其他格式由 pandas 選擇對應的讀取引擎。
     """
@@ -134,6 +109,7 @@ def read_case_numbers(
 
     codes = _court_codes()
     results: list[CaseNumber] = []
+    seen: set[tuple[str, int, str, int]] = set()
     for row_number, values in enumerate(
         frame.iloc[start_row - 1:, indices].itertuples(index=False, name=None),
         start=start_row,
@@ -152,8 +128,39 @@ def read_case_numbers(
             if not re.fullmatch(r"[0-9]+(?:\.0+)?", value):
                 raise ValueError(f"Excel 第 {row_number} 列{label}必須是非負整數：{value}")
             integers.append(int(value.split(".")[0]))
+        key = (code, integers[0], case, integers[1])
+        if key in seen:
+            continue
+        seen.add(key)
         results.append(CaseNumber(court=code, year=integers[0], case=case, number=integers[1]))
     return results
+
+
+def _column_index(column: str) -> int:
+    if not isinstance(column, str) or not re.fullmatch(r"[A-Za-z]+", column):
+        raise ValueError(f"Excel 欄位必須是英文字母，例如 AL：{column!r}")
+    index = 0
+    for letter in column.upper():
+        index = index * 26 + ord(letter) - ord("A") + 1
+    return index - 1
+
+
+def _court_codes() -> dict[str, str]:
+    codes = {}
+    for code, name in COURT_MAP.items():
+        if not code:
+            continue
+        aliases = {name, name.replace("地方法院", "地院").replace("高等法院", "高院")}
+        if name.startswith(("臺灣", "福建")) and name.endswith("地方法院"):
+            aliases.update({name[2:], name[2:].replace("地方法院", "地院")})
+        for alias in aliases:
+            codes[_normalize_court(alias)] = code
+        codes[code] = code
+    return codes
+
+
+def _normalize_court(name: str) -> str:
+    return re.sub(r"\s+", "", name).replace("台", "臺")
 
 
 if __name__ == "__main__":

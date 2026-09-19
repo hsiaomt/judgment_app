@@ -24,6 +24,8 @@ def main() -> None:
     jid_json = get_jid_json(token)
     jid_date = jid_json["date"]
     save_json(folder / f"{jid_date}.json", jid_json)
+    #print(get_judgment(token, "TPSM,114,台上,6577,20260416,1"))
+
 
 def save_all_judgments(token, folder) -> None:
     jid_json = get_jid_json(token)
@@ -101,17 +103,7 @@ def save_all_judgments(token, folder) -> None:
             except_dict
         )
 
-def save_json(file_path, saved_json) -> None:
-    tmp_path = file_path.with_suffix(file_path.suffix + ".tmp")
-    with open(tmp_path, "w", encoding="utf-8") as f:
-        json.dump(
-            saved_json,
-            f,
-            ensure_ascii=False,
-            indent=4
-        )
-    tmp_path.replace(file_path)
-    
+
 def get_judgment(token, jid) -> dict:
     url = "https://data.judicial.gov.tw/jdg/api/JDoc"
     payload  = {
@@ -124,7 +116,7 @@ def get_judgment(token, jid) -> dict:
         "JDoc",
     )
 
-    actual_jid = require_type(data.get("jid"), str, "JDoc")
+    actual_jid = require_type(data.get("JID"), str, "JDoc")
     if actual_jid != jid:
         raise ApiResponseError(
             f"JDoc：JID 不一致，預期 {jid}，實際 {actual_jid}"
@@ -142,6 +134,7 @@ def get_judgment(token, jid) -> dict:
 
     return data
 
+
 def get_jid_json(token) -> dict:
     url = "https://data.judicial.gov.tw/jdg/api/JList"
     data = post_json(
@@ -158,6 +151,7 @@ def get_jid_json(token) -> dict:
         require_type(jid, str, f"JList[0].list[{index}]")
     
     return data[0]
+
 
 def get_token() -> str:
     today = date.today().isoformat()
@@ -177,6 +171,32 @@ def get_token() -> str:
     
     return token
 
+
+def get_judgments_folder() -> Path:
+    value = os.getenv("JUDGMENTS_DIR")
+    if not value:
+        raise RuntimeError("請在 .env 設定 JUDGMENTS_DIR")
+
+    folder = Path(value).expanduser()
+    if not folder.is_absolute():
+        folder = PROJECT_ROOT / folder
+
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def save_json(file_path, saved_json) -> None:
+    tmp_path = file_path.with_suffix(file_path.suffix + ".tmp")
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(
+            saved_json,
+            f,
+            ensure_ascii=False,
+            indent=4
+        )
+    tmp_path.replace(file_path)
+
+
 def request_new_token() -> str:
     username = os.getenv("JUDICIAL_USERNAME")
     password = os.getenv("JUDICIAL_PASSWORD")
@@ -194,6 +214,7 @@ def request_new_token() -> str:
     data = require_type(post_json(url, payload), dict, "Auth")
 
     return require_type(data["Token"], str, "Auth")
+
 
 def post_json(
     url: str,
@@ -261,17 +282,6 @@ def post_json(
 
     raise RuntimeError("未預期的請求流程")
 
-def get_judgments_folder() -> Path:
-    value = os.getenv("JUDGMENTS_DIR")
-    if not value:
-        raise RuntimeError("請在 .env 設定 JUDGMENTS_DIR")
-
-    folder = Path(value).expanduser()
-    if not folder.is_absolute():
-        folder = PROJECT_ROOT / folder
-
-    folder.mkdir(parents=True, exist_ok=True)
-    return folder
 
 def require_type[T](
     data: object,
@@ -279,6 +289,10 @@ def require_type[T](
     endpoint: str,
     allow_nothing: bool = False,
 ) -> T:
+    if isinstance(data, dict) and data.get("error") == "目前非本 API 服務時間。":
+        raise ApiResponseError(
+            data["error"]
+        )
     if not isinstance(data, expected_type):
         raise ApiResponseError(
             f"{endpoint}：預期為 {expected_type.__name__}，"
@@ -293,7 +307,7 @@ def require_type[T](
             raise ApiResponseError(
                 f"{endpoint}：空白"
             )
-
+        
     return data
 
 if __name__ == "__main__":

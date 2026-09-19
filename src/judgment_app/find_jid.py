@@ -1,4 +1,5 @@
 from urllib.parse import parse_qs, urljoin, urlparse
+from contextlib import nullcontext
 
 import requests
 from bs4 import BeautifulSoup
@@ -14,16 +15,11 @@ def main():
         case="訴",
         number=219,
     )
-    print(results)
+    
     print(f"共找到 {len(results)} 筆裁判")
     for result in results:
         print(f"JID：{result}")
         print()
-
-
-def get_soup(response):
-    response.raise_for_status()
-    return BeautifulSoup(response.content, "html.parser")
 
 
 def search_judgments(
@@ -31,15 +27,17 @@ def search_judgments(
     year: int,
     case: str,
     number: int,
-) -> list[dict[str, str]]:
+    *,
+    session: requests.Session | None = None,
+) -> list[str]:
     results = []
     seen_jids = set()
     visited_pages = set()
 
-    with requests.Session() as session:
+    with (requests.Session() if session is None else nullcontext(session)) as session:
         # 1. 取得 ASP.NET 動態欄位及 Session Cookie。
         response = session.get(SEARCH_URL, timeout=TIMEOUT)
-        soup = get_soup(response)
+        soup = _get_soup(response)
 
         form = soup.find("form")
         if form is None:
@@ -90,7 +88,7 @@ def search_judgments(
             headers={"Referer": response.url},
             timeout=TIMEOUT,
         )
-        soup = get_soup(response)
+        soup = _get_soup(response)
 
         iframe = soup.select_one("iframe#iframe-data[src]")
         if iframe is None:
@@ -114,7 +112,7 @@ def search_judgments(
             visited_pages.add(page_url)
 
             response = session.get(page_url, timeout=TIMEOUT)
-            soup = get_soup(response)
+            soup = _get_soup(response)
 
             page_jids = []
             for link in soup.select("a[href]"):
@@ -134,7 +132,7 @@ def search_judgments(
                     raise RuntimeError(f"無法解析 JID：{jid!r}")
 
                 page_jids.append(jid)
-                if jid not in seen_jids:
+                if link.get_text(" ", strip=True).endswith("判決") and jid not in seen_jids:
                     seen_jids.add(jid)
                     results.append(
                         #"jid": jid,
@@ -142,7 +140,9 @@ def search_judgments(
                         jid,
                     )
 
-            if not page_jids:
+            # 不公開案件會顯示結果列，但不提供 data.aspx 連結。
+            withheld = "本件經程式判定為依法不得公開或須去識別化後公開之案件" in soup.get_text()
+            if not page_jids and not withheld:
                 raise RuntimeError(
                     f"結果頁沒有裁判連結，請檢查網站回應：{response.url}"
                 )
@@ -181,6 +181,11 @@ def search_judgments(
                 break
 
     return results
+
+
+def _get_soup(response):
+    response.raise_for_status()
+    return BeautifulSoup(response.content, "html.parser")
 
 
 if __name__ == "__main__":

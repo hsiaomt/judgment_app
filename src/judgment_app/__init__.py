@@ -47,7 +47,9 @@ COURT_MAP = {
 }
 
 def main() -> None:
-    pass
+    from judgment_app.gui import main as gui_main
+
+    gui_main()
     
 if __name__ == "__main__":
     main()
