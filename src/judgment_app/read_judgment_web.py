@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup, Comment, NavigableString
 from judgment_app.find_jid import search_judgments
 from judgment_app.exceptions import ApiResponseError
 from judgment_app.read_case_numbers import COURT_MAP, read_case_numbers
+from judgment_app.paths import resolve_output_path
 
 DOCUMENT_URL = "https://judgment.judicial.gov.tw/FJUD/data.aspx"
 
@@ -23,7 +24,7 @@ DOCUMENT_URL = "https://judgment.judicial.gov.tw/FJUD/data.aspx"
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("excel", type=Path)
-    parser.add_argument("--output", type=Path, default=Path("data") / datetime.now().strftime("web_test_%Y%m%d_%H%M%S"))
+    parser.add_argument("--output", type=Path, default=resolve_output_path(Path("data") / datetime.now().strftime("web_test_%Y%m%d_%H%M%S")))
     parser.add_argument("--interval", type=float, default=0, help="案號之間等待秒數，預設連續循序請求")
     args = parser.parse_args()
     if args.interval < 0:

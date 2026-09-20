@@ -5,17 +5,16 @@ import os
 import re
 from pathlib import Path
 from datetime import date
-from dotenv import load_dotenv, set_key
-from judgment_app.exceptions import *
+from dotenv import set_key
+from judgment_app.exceptions import ApiResponseError
+from judgment_app.paths import config_file, jid_json_output_dir, load_settings, user_data_dir
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-ENV_FILE = PROJECT_ROOT / ".env"
 
 HTTP_TIMEOUT = (5, 30)
 MAX_ATTEMPTS = 3
 RETRY_STATUS_CODES = {502, 503, 504}
 
-load_dotenv(ENV_FILE)
+load_settings()
 
 def main() -> None:
     token = get_token()
@@ -130,7 +129,7 @@ def get_judgment(token, jid) -> dict:
         )
 
     full_x = require_type(data["JFULLX"], dict, "JDoc.JFULLX")
-    require_type(full_x["JFULLCONTENT"], str, "JDoc.JFULLX.JFULLCONTENT")
+    require_type(full_x.get("JFULLCONTENT"), str, "JDoc.JFULLX.JFULLCONTENT")
 
     return data
 
@@ -144,9 +143,9 @@ def get_jid_json(token) -> dict:
     )
     require_type(data, list, "JList")
     batch = require_type(data[0], dict, "JList[0]")
-    require_type(batch["date"], str, "JList[0].date")
+    require_type(batch.get("date"), str, "JList[0].date")
     jids = batch.get("list")
-    require_type(jids, list, "JList[0].list")
+    require_type(jids, list, "JList[0].list", allow_nothing=True)
     for index, jid in enumerate(jids):
         require_type(jid, str, f"JList[0].list[{index}]")
     
@@ -162,25 +161,23 @@ def get_token() -> str:
         return token
     # 今天還沒取得 → 重新取得
     token = request_new_token()
-    # 更新 .env
-    set_key(ENV_FILE, "API_TOKEN", token)
-    set_key(ENV_FILE, "API_TOKEN_DATE", today)
     # 讓目前程式也能直接使用
     os.environ["API_TOKEN"] = token
     os.environ["API_TOKEN_DATE"] = today
+    # 快取失敗不影響本次下載，也不修改 EXE 旁的帳密設定。
+    try:
+        cache = user_data_dir() / "token.env"
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        set_key(cache, "API_TOKEN", token)
+        set_key(cache, "API_TOKEN_DATE", today)
+    except OSError:
+        pass
     
     return token
 
 
 def get_judgments_folder() -> Path:
-    value = os.getenv("JUDGMENTS_DIR")
-    if not value:
-        raise RuntimeError("請在 .env 設定 JUDGMENTS_DIR")
-
-    folder = Path(value).expanduser()
-    if not folder.is_absolute():
-        folder = PROJECT_ROOT / folder
-
+    folder = jid_json_output_dir()
     folder.mkdir(parents=True, exist_ok=True)
     return folder
 
@@ -203,7 +200,7 @@ def request_new_token() -> str:
 
     if not username or not password:
         raise RuntimeError(
-            "請在 .env 設定 JUDICIAL_USERNAME 和 JUDICIAL_PASSWORD"
+            f"請在 {config_file()} 設定 JUDICIAL_USERNAME 和 JUDICIAL_PASSWORD"
         )
 
     url = "https://data.judicial.gov.tw/jdg/api/Auth"
@@ -213,7 +210,7 @@ def request_new_token() -> str:
     }
     data = require_type(post_json(url, payload), dict, "Auth")
 
-    return require_type(data["Token"], str, "Auth")
+    return require_type(data.get("Token"), str, "Auth.Token")
 
 
 def post_json(

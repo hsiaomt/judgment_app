@@ -1,6 +1,7 @@
 """從 Excel 指定欄位讀取案號。"""
 
 import re
+import argparse
 from pathlib import Path
 from typing import TypedDict
 
@@ -56,8 +57,11 @@ COURT_MAP = {
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("excel", type=Path)
+    args = parser.parse_args()
     cases = read_case_numbers(
-        "data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(1150522).xls",
+        args.excel,
         "AL", "AM", "AN", "AO",  # 法院、年度、字別、號數
         start_row=4,            # 第一筆資料的 Excel 列號
     )

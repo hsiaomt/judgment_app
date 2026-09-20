@@ -12,6 +12,7 @@ import pandas as pd
 
 from judgment_app.read_case_numbers import COURT_MAP, read_case_numbers
 from judgment_app.read_judgment_web import download_cases
+from judgment_app.paths import default_output_dir, resolve_output_path
 
 
 def main() -> None:
@@ -63,7 +64,7 @@ class CaseReaderApp:
         self.columns = [tk.StringVar(value=value) for value in ("AL", "AM", "AN", "AO")]
         self.status = tk.StringVar(value="請先選擇 Excel 檔案。")
         self.controls = []
-        self.output = tk.StringVar(value=str(Path("data/judgments").resolve()))
+        self.output = tk.StringVar(value=str(default_output_dir()))
         self.web = tk.BooleanVar(value=True)
         self.pdf = tk.BooleanVar(value=False)
         self.api = tk.BooleanVar(value=False)
@@ -239,7 +240,7 @@ class CaseReaderApp:
             messagebox.showerror("下載設定", "請選擇至少一個項目，並指定儲存路徑。", parent=self.root)
             return
         cases = self.visible_cases()
-        output = Path(self.output.get().strip()).expanduser()
+        output = resolve_output_path(self.output.get().strip())
         self.status.set("正在搜尋與下載…")
         self.run_task("download", lambda: download_cases(
             cases, output, web=web, pdf=pdf, api=api,
