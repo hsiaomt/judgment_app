@@ -9,6 +9,7 @@ import certifi
 import pandas as pd
 import xlrd
 
+from judgment_app.case_number import CaseNumber
 from judgment_app.gui import CaseReaderApp
 from judgment_app.paths import application_dir, default_output_dir
 from judgment_app.read_case_numbers import read_case_numbers
@@ -21,7 +22,7 @@ def run(report_path: str, xls_path: str | None = None) -> None:
         workbook = Path(directory) / "測試案號.xlsx"
         pd.DataFrame([["臺北地院", 114, "訴", 219]]).to_excel(workbook, index=False, header=False)
         cases = read_case_numbers(workbook, "A", "B", "C", "D", start_row=1)
-        assert cases == [dict(court="TPD", year=114, case="訴", number=219)]
+        assert cases == [CaseNumber(court="TPD", year=114, case="訴", number=219)]
         report["xlsx"] = True
         if xls_path:
             with pd.ExcelFile(xls_path, engine="xlrd") as book:

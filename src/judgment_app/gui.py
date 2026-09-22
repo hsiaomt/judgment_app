@@ -10,7 +10,8 @@ from tkinter import filedialog, messagebox, ttk
 
 import pandas as pd
 
-from judgment_app.read_case_numbers import COURT_MAP, read_case_numbers
+from judgment_app.case_number import COURT_MAP, CaseNumber
+from judgment_app.read_case_numbers import read_case_numbers
 from judgment_app.read_judgment_web import download_cases
 from judgment_app.paths import default_output_dir, resolve_output_path
 
@@ -53,7 +54,7 @@ class CaseReaderApp:
         ttk.Style(root).configure("Treeview", rowheight=tkfont.nametofont("TkDefaultFont").metrics("linespace") + round(8 * scale))
         self.events = Queue()
         self.busy = False
-        self.cases = []
+        self.cases: list[CaseNumber] = []
         self.sort_column = None
         self.sort_reverse = False
         self.sort_rules = []
@@ -66,6 +67,7 @@ class CaseReaderApp:
         self.controls = []
         self.output = tk.StringVar(value=str(default_output_dir()))
         self.web = tk.BooleanVar(value=True)
+        self.history = tk.BooleanVar(value=True)
         self.pdf = tk.BooleanVar(value=False)
         self.api = tk.BooleanVar(value=False)
 
@@ -163,8 +165,11 @@ class CaseReaderApp:
             ("透過 JID 和 API 得到判決書（JSON）", self.api),
         )):
             control = ttk.Checkbutton(downloads, text=label, variable=variable)
-            control.grid(row=index, column=0, columnspan=3, sticky="w")
+            control.grid(row=index, column=0, sticky="w")
             self.controls.append((control, "normal"))
+        history_control = ttk.Checkbutton(downloads, text="下載歷審裁判（JSON無此功能）", variable=self.history)
+        history_control.grid(row=0, column=1, sticky="w", padx=8)
+        self.controls.append((history_control, "normal"))
         ttk.Label(downloads, text="儲存路徑").grid(row=3, column=0, sticky="w", pady=8)
         destination = ttk.Entry(downloads, textvariable=self.output)
         destination.grid(row=3, column=1, sticky="ew", padx=8)
@@ -239,11 +244,12 @@ class CaseReaderApp:
         if not any((web, pdf, api)) or not self.output.get().strip():
             messagebox.showerror("下載設定", "請選擇至少一個項目，並指定儲存路徑。", parent=self.root)
             return
+        history = self.history.get()
         cases = self.visible_cases()
         output = resolve_output_path(self.output.get().strip())
         self.status.set("正在搜尋與下載…")
         self.run_task("download", lambda: download_cases(
-            cases, output, web=web, pdf=pdf, api=api,
+            cases, output, web=web, pdf=pdf, api=api, history=history,
             progress=lambda text: self.events.put(("progress", text, None)),
             on_result=lambda text: self.events.put(("result", text, None)),
         ))
@@ -257,7 +263,7 @@ class CaseReaderApp:
         if not court or not word or not year.isascii() or not year.isdecimal() or not number.isascii() or not number.isdecimal() or int(year) < 1 or int(number) < 1:
             messagebox.showerror("案號格式", "請選擇法院、填寫字別，年度與號數須為正整數。", parent=self.root)
             return
-        case = dict(court=court, year=int(year), case=word, number=int(number))
+        case = CaseNumber(court=court, year=int(year), case=word, number=int(number))
         if case in self.cases:
             self.status.set("此案號已在清單中，未重複新增。")
             return
@@ -317,24 +323,24 @@ class CaseReaderApp:
         ttk.Button(dialog, text="套用", command=apply).grid(row=6, column=1, pady=12)
         ttk.Button(dialog, text="取消", command=dialog.destroy).grid(row=6, column=2, pady=12)
 
-    def merge_cases(self, cases):
+    def merge_cases(self, cases: list[CaseNumber]) -> None:
         for case in cases:
             if case not in self.cases:
-                self.cases.append(dict(case))
+                self.cases.append(case)
         self.refresh_cases()
 
-    def visible_cases(self):
+    def visible_cases(self) -> list[CaseNumber]:
         """以畫面列順序建立下載快照。"""
         cases = []
         for item in self.tree.get_children():
             _, _, court, year, case, number = self.tree.item(item, "values")
-            cases.append(dict(court=court, year=int(year), case=case, number=int(number)))
+            cases.append(CaseNumber(court=court, year=int(year), case=case, number=int(number)))
         return cases
 
     def refresh_cases(self):
         # Python 排序是穩定排序：從最低優先欄位往前套用。
         for column, reverse in reversed(self.sort_rules):
-            key = (lambda case: COURT_MAP.get(case["court"], case["court"])) if column == "court" else (lambda case: case["court" if column == "code" else column])
+            key = (lambda case: case.court_name) if column == "court" else (lambda case: getattr(case, "court" if column == "code" else column))
             self.cases.sort(key=key, reverse=reverse)
         labels = {"court": "法院", "code": "法院代碼", "year": "年度", "case": "字別", "number": "號數"}
         self.sort_description.set("排序：" + " → ".join(f"{labels[column]}{'降冪' if reverse else '升冪'}" for column, reverse in self.sort_rules) if self.sort_rules else "未設定排序，保留目前順序")
@@ -344,7 +350,7 @@ class CaseReaderApp:
         self.render_cases(0)
 
     def clear_results(self) -> None:
-        self.cases = []
+        self.cases: list[CaseNumber] = []
         self.download_button.configure(state="disabled")
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -390,7 +396,7 @@ class CaseReaderApp:
                 self.append_log(str(error))
                 messagebox.showerror("作業失敗", str(error), parent=self.root)
             elif kind == "download":
-                summary = f"下載完成：{len(result['files'])} 個檔案；{len(result['skipped'])} 個已存在並跳過；{len(result['empty'])} 個案號無符合結果；{len(result['errors'])} 項失敗。"
+                summary = f"下載完成：原始判決 {len(result['files'])} 個檔案；歷審判決 {len(result.get('history_files', []))} 個檔案；原始 {len(result['skipped'])} 個已存在並跳過；歷審 {len(result.get('history_skipped', []))} 個已存在並跳過；{len(result['empty'])} 個案號無符合結果；{len(result['errors'])} 項失敗。"
                 self.status.set(summary)
                 self.append_log(summary)
                 for title, cases in (("無符合結果或未公開的案號", result["empty"]),
@@ -399,8 +405,10 @@ class CaseReaderApp:
                     if not cases:
                         self.append_log("無")
                     for case in cases:
-                        court = COURT_MAP.get(case["court"], case["court"])
-                        self.append_log(f"{court} {case['year']}年度{case['case']}字第{case['number']}號")
+                        annotation = ""
+                        if original := case.original_case:
+                            annotation = f"（原始案號：{original.label}）"
+                        self.append_log(f"{case.label}{annotation}")
                 if result["errors"]:
                     self.append_log("\n【失敗原因】")
                     for detail in result["errors"]:
@@ -419,8 +427,8 @@ class CaseReaderApp:
         end = min(start + 200, len(self.cases))
         for index in range(start, end):
             case = self.cases[index]
-            self.tree.insert("", "end", values=(index + 1, COURT_MAP.get(case["court"], case["court"]),
-                             case["court"], case["year"], case["case"], case["number"]))
+            self.tree.insert("", "end", values=(index + 1, case.court_name,
+                             case.court, case.year, case.case, case.number))
         if end < len(self.cases):
             self.status.set(f"正在顯示結果：{end} / {len(self.cases)}")
             self.root.after(1, self.render_cases, end)

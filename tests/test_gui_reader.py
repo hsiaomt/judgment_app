@@ -6,6 +6,7 @@ import unittest
 
 import pandas as pd
 
+from judgment_app.case_number import CaseNumber
 from judgment_app.gui import read_case_numbers
 
 
@@ -17,6 +18,7 @@ class ReaderIntegrationTests(unittest.TestCase):
                 ["號數", "法院", "字別", "年度"],
                 [219, "臺灣臺北地方法院", "訴", 114],
                 [219, "台北地院", "訴", 114],
+                [219, "TPDM", "訴", 114],
             ]
             with pd.ExcelWriter(path) as writer:
                 pd.DataFrame([["其他工作表"]]).to_excel(writer, sheet_name="其他", header=False, index=False)
@@ -24,7 +26,7 @@ class ReaderIntegrationTests(unittest.TestCase):
             with pd.ExcelFile(path) as workbook:
                 self.assertEqual(workbook.sheet_names, ["其他", "案號"])
             result = read_case_numbers(path, "B", "D", "C", "A", sheet_name="案號", start_row=2)
-            self.assertEqual(result, [{"court": "TPD", "year": 114, "case": "訴", "number": 219}])
+            self.assertEqual(result, [CaseNumber("TPD", 114, "訴", 219)])
             with self.assertRaisesRegex(ValueError, "不同欄位"):
                 read_case_numbers(path, "A", "A", "C", "D")
             with self.assertRaisesRegex(ValueError, "超出"):

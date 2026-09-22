@@ -6,8 +6,9 @@ from pathlib import Path
 
 import requests
 
-from judgment_app.read_judgment_web import MeasuredSession, get_judgment_web, get_judgment_pdf, download_cases, save_document
-from judgment_app.find_jid import search_judgments
+from judgment_app.case_number import CaseNumber
+from judgment_app.read_judgment_web import MeasuredSession, get_judgment_web, get_judgment_pdf, download_cases, save_document, run_batch, download_case_pdfs
+from judgment_app.read_judgment_web import case_to_jids
 
 
 class WebJudgmentTests(unittest.TestCase):
@@ -23,7 +24,7 @@ class WebJudgmentTests(unittest.TestCase):
         api.return_value = document
         messages = []
         with TemporaryDirectory() as folder:
-            case = dict(court="TPD", year=114, case="訴", number=218)
+            case = CaseNumber(court="TPD", year=114, case="訴", number=218)
             report = download_cases([case], folder, api=True, on_result=messages.append)
             self.assertFalse(report["errors"])
             self.assertEqual(len(report["files"]), 1)
@@ -33,7 +34,7 @@ class WebJudgmentTests(unittest.TestCase):
             api.assert_called_once_with("test-token", jid)
             token.assert_called_once()
             search.assert_called_once()
-            self.assertEqual(search.call_args.kwargs["court"], "TPD")
+            self.assertEqual(search.call_args.args[0].court, "TPD")
             web.assert_not_called()
             pdf.assert_not_called()
             self.assertTrue(any("已取得 JID" in text for text in messages))
@@ -49,7 +50,7 @@ class WebJudgmentTests(unittest.TestCase):
             for suffix in ('.txt', '.json'):
                 (Path(folder) / (name + suffix)).write_bytes(b'existing')
             messages = []
-            report = download_cases([dict(court='TPD', year=114, case='訴', number=218)], folder,
+            report = download_cases([CaseNumber(court='TPD', year=114, case='訴', number=218)], folder,
                                     web=True, pdf=True, api=True, on_result=messages.append)
             self.assertEqual(len(report['skipped']), 2)
             self.assertEqual(len(report['files']), 1)
@@ -82,7 +83,7 @@ class WebJudgmentTests(unittest.TestCase):
     @patch("judgment_app.read_judgment_web.search_judgments", return_value=["TPDM,114,訴,218,20250328,1", "TPDM,114,訴,218,20250428,1"])
     def test_all_modes_search_once_and_number_documents(self, search, web, pdf, token, api):
         with TemporaryDirectory() as folder:
-            report = download_cases([dict(court="TPD", year=114, case="訴", number=218)], folder, web=True, pdf=True, api=True)
+            report = download_cases([CaseNumber(court="TPD", year=114, case="訴", number=218)], folder, web=True, pdf=True, api=True)
             self.assertEqual(len(report["files"]), 6)
             self.assertFalse(report["errors"])
             self.assertTrue((Path(folder) / "臺灣臺北地方法院114年度訴字第218號_2.pdf").exists())
@@ -124,7 +125,34 @@ class WebJudgmentTests(unittest.TestCase):
         session.post.return_value = self.response(
             '<iframe id="iframe-data" src="qryresultlst.aspx?ty=JUDBOOK&amp;q=test"></iframe>'
         )
-        self.assertEqual(search_judgments("TPH", 114, "國金上重訴", 1, session=session), [])
+        self.assertEqual(case_to_jids(CaseNumber(court="TPHM", year=114, case="國金上重訴", number=1), session=session), [])
+        self.assertEqual(session.post.call_args.kwargs["data"]["jud_court"], "TPH")
+        self.assertEqual(session.post.call_args.kwargs["data"]["jud_sys"], "M")
+
+    @patch("judgment_app.read_judgment_web.read_case_numbers")
+    @patch("judgment_app.read_judgment_web.search_judgments", return_value=[])
+    def test_batch_serializes_case_number(self, search, read):
+        case = CaseNumber("TPD", 114, "訴", 219)
+        read.return_value = [case]
+        with TemporaryDirectory() as folder:
+            output = Path(folder) / "report"
+            report = run_batch(Path(folder) / "cases.xlsx", output)
+            saved = json.loads((output / "report.json").read_text(encoding="utf-8"))
+            self.assertIsNone(report["error"])
+            self.assertEqual(saved["completed_cases"], 1)
+            self.assertEqual(saved["cases"][0]["case"],
+                             {"court": "TPD", "year": 114, "case": "訴", "number": 219})
+            self.assertEqual(search.call_args.args, (case,))
+
+    @patch("judgment_app.read_judgment_web.search_judgments", return_value=["TPDM,114,訴,219,20250328,1"])
+    @patch("judgment_app.read_judgment_web.get_judgment_pdf", return_value=b"%PDF-test")
+    def test_download_case_pdfs_accepts_case_number(self, pdf, search):
+        case = CaseNumber("TPD", 114, "訴", 219)
+        with TemporaryDirectory() as folder:
+            paths = download_case_pdfs(case, folder)
+            self.assertEqual(len(paths), 1)
+            self.assertEqual(paths[0].read_bytes(), b"%PDF-test")
+            self.assertEqual(search.call_args.args, (case,))
 
     def response(self, html, status=200):
         response = requests.Response()

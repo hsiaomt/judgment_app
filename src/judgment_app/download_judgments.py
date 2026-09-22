@@ -2,10 +2,10 @@ import requests
 import time
 import json
 import os
-import re
 from pathlib import Path
 from datetime import date
 from dotenv import set_key
+from judgment_app.case_number import JudgmentId
 from judgment_app.exceptions import ApiResponseError
 from judgment_app.paths import config_file, jid_json_output_dir, load_settings, user_data_dir
 
@@ -47,12 +47,11 @@ def save_all_judgments(token, folder) -> None:
             exist_num += 1
             print("  → 已存在，跳過")
             continue
-        if not re.match(r"^...M", jid):
-            not_criminal_num += 1
-            print("  → 非刑事，跳過")
-            continue
-
         try:
+            if JudgmentId.from_string(jid).category != "M":
+                not_criminal_num += 1
+                print("  → 非刑事，跳過")
+                continue
             judgment = get_judgment(token, jid)
             if "error" in judgment:
                 error_dict[jid] = judgment["error"]
