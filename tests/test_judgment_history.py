@@ -6,12 +6,12 @@ from unittest.mock import Mock, patch
 
 import requests
 
-from judgment_app.case_number import CaseNumber
-from judgment_app.read_judgment_web import download_cases, get_judgment_history, case_label
+from judgment_app.case_number import CaseNumber, JudgmentId
+from judgment_app.acquisition.read_judgment_web import download_cases, get_judgment_history
 
 
-ORIGINAL = 'TPDM,114,訴,218,20250328,1'
-RELATED = 'TPHM,114,上訴,3070,20250910,1'
+ORIGINAL = JudgmentId.from_string('TPDM,114,訴,218,20250328,1')
+RELATED = JudgmentId.from_string('TPHM,114,上訴,3070,20250910,1')
 CASE = CaseNumber(court='TPD', year=114, case='訴', number=218)
 
 
@@ -24,15 +24,41 @@ def response(text):
 
 
 class HistoryTests(unittest.TestCase):
+    def test_same_case_documents_share_folder_and_keep_names_when_order_changes(self):
+        second = JudgmentId.from_string('TPDM,114,訴,218,20250328,2')
+        with TemporaryDirectory() as folder, \
+                patch('judgment_app.acquisition.read_judgment_web.case_to_jids', return_value=[ORIGINAL, second]) as search, \
+                patch('judgment_app.acquisition.read_judgment_web.get_judgment_history', return_value=[RELATED]), \
+                patch('judgment_app.acquisition.read_judgment_web.get_judgment_web', return_value={'text': '正文'}) as web, \
+                patch('judgment_app.acquisition.read_judgment_web.get_judgment_pdf', return_value=b'%PDF-test') as pdf, \
+                patch('judgment_app.acquisition.download_judgments.get_token', return_value='token'), \
+                patch('judgment_app.acquisition.download_judgments.get_judgment', return_value={}) as api:
+            report = download_cases([CASE], folder, web=True, pdf=True, api=True, history=True)
+            self.assertFalse(report['errors'])
+            expected = {
+                str(Path(folder) / CASE.file_name / f'{CASE.file_name}_20250328_{sequence}{suffix}')
+                for sequence in (1, 2) for suffix in ('.txt', '.pdf', '.json')
+            }
+            self.assertEqual(set(report['files']), expected)
+            self.assertEqual(len(report['history_files']), 2)
+            search.return_value = [second, ORIGINAL]
+            for mock in (web, pdf, api):
+                mock.reset_mock()
+            report = download_cases([CASE], folder, web=True, pdf=True, api=True, history=True)
+            self.assertEqual(set(report['skipped']), expected)
+            self.assertEqual(len(report['history_skipped']), 2)
+            for mock in (web, pdf, api):
+                mock.assert_not_called()
+
     def test_ajax_filters_orders_self_duplicates_and_unlinked_cases(self):
         session = Mock()
         session.get.side_effect = [response('''
             <meta charset="utf-8"><div class="rela-area col-xs-4"><div id="JudHis"><ul></ul></div></div>
             <script>$.ajax({url: "../controls/GetJudHistory.ashx?jid=test"})</script>
         '''), response(json.dumps({'count': 6, 'list': [
-            dict(desc='原始判決(114.03.28)', href=f'data.aspx?ty=JD&id={ORIGINAL}'),
-            dict(desc='上訴判決(114.09.10)', href=f'data.aspx?ty=JD&id={RELATED}'),
-            dict(desc='上訴判決(114.09.10)', href=f'data.aspx?ty=JD&id={RELATED}'),
+            dict(desc='原始判決(114.03.28)', href=f'data.aspx?ty=JD&id={ORIGINAL.to_string()}'),
+            dict(desc='上訴判決(114.09.10)', href=f'data.aspx?ty=JD&id={RELATED.to_string()}'),
+            dict(desc='上訴判決(114.09.10)', href=f'data.aspx?ty=JD&id={RELATED.to_string()}'),
             dict(desc='裁定(114.09.11)', href='data.aspx?ty=JD&id=TPHM,114,上訴,3070,20250911,1'),
             dict(desc='尚無裁判', href=''),
             dict(desc='判決', href=''),
@@ -44,20 +70,22 @@ class HistoryTests(unittest.TestCase):
         session = Mock()
         session.get.return_value = response(f'''<meta charset="utf-8">
             <div class="rela-area"><div id="JudHis"><ul>
-            <li><a href="data.aspx?ty=JD&amp;id={RELATED}">歷審判決</a></li>
+            <li><a href="data.aspx?ty=JD&amp;id={RELATED.to_string()}">歷審判決</a></li>
             </ul></div><a href="data.aspx?ty=JD&amp;id=OTHER,114,訴,1,20250101,1">其他判決</a></div>''')
         self.assertEqual(get_judgment_history(ORIGINAL, session=session), [RELATED])
 
-    @patch('judgment_app.read_judgment_web.search_judgments', return_value=[ORIGINAL])
-    @patch('judgment_app.read_judgment_web.get_judgment_history', return_value=[ORIGINAL, RELATED, RELATED])
-    @patch('judgment_app.read_judgment_web.get_judgment_web', return_value={'text': '判決正文'})
+    @patch('judgment_app.acquisition.read_judgment_web.case_to_jids', return_value=[ORIGINAL])
+    @patch('judgment_app.acquisition.read_judgment_web.get_judgment_history', return_value=[ORIGINAL, RELATED, RELATED])
+    @patch('judgment_app.acquisition.read_judgment_web.get_judgment_web', return_value={'text': '判決正文'})
     def test_grouping_counts_and_rerun_with_existing_original(self, web, history, search):
         with TemporaryDirectory() as folder:
             report = download_cases([CASE], folder, web=True, history=True)
             self.assertEqual(len(report['files']), 1)
             self.assertEqual(len(report['history_files']), 1)
             for file in report['files'] + report['history_files']:
-                self.assertEqual(Path(file).parent, Path(folder) / case_label(CASE))
+                self.assertEqual(Path(file).parent, Path(folder) / CASE.file_name)
+            self.assertEqual(Path(report['files'][0]).name, '臺灣臺北地方法院114年度訴字第218號_20250328_1.txt')
+            self.assertEqual(Path(report['history_files'][0]).name, '臺灣高等法院114年度上訴字第3070號_20250910_1.txt')
             self.assertEqual(web.call_count, 2)
             web.reset_mock()
             report = download_cases([CASE], folder, web=True, history=True)
@@ -67,9 +95,9 @@ class HistoryTests(unittest.TestCase):
             web.assert_not_called()
             self.assertEqual(history.call_count, 2)
 
-    @patch('judgment_app.read_judgment_web.search_judgments', return_value=[ORIGINAL])
-    @patch('judgment_app.read_judgment_web.get_judgment_history', return_value=[RELATED])
-    @patch('judgment_app.read_judgment_web.get_judgment_web', side_effect=[{'text': '正文'}, RuntimeError('失敗')])
+    @patch('judgment_app.acquisition.read_judgment_web.case_to_jids', return_value=[ORIGINAL])
+    @patch('judgment_app.acquisition.read_judgment_web.get_judgment_history', return_value=[RELATED])
+    @patch('judgment_app.acquisition.read_judgment_web.get_judgment_web', side_effect=[{'text': '正文'}, RuntimeError('失敗')])
     def test_history_failure_identifies_related_case_and_original(self, web, history, search):
         with TemporaryDirectory() as folder:
             messages = []
@@ -86,12 +114,12 @@ class HistoryTests(unittest.TestCase):
         for web, pdf, api in [(True, False, False), (False, True, False),
                               (True, True, True), (False, False, True)]:
             with self.subTest(web=web, pdf=pdf, api=api), TemporaryDirectory() as folder, \
-                    patch('judgment_app.read_judgment_web.search_judgments', return_value=[ORIGINAL]), \
-                    patch('judgment_app.read_judgment_web.get_judgment_history', return_value=[RELATED]) as history, \
-                    patch('judgment_app.read_judgment_web.get_judgment_web', return_value={'text': '正文'}) as get_web, \
-                    patch('judgment_app.read_judgment_web.get_judgment_pdf', return_value=b'%PDF-test') as get_pdf, \
-                    patch('judgment_app.download_judgments.get_token', return_value='token'), \
-                    patch('judgment_app.download_judgments.get_judgment', return_value={}) as get_api:
+                    patch('judgment_app.acquisition.read_judgment_web.case_to_jids', return_value=[ORIGINAL]), \
+                    patch('judgment_app.acquisition.read_judgment_web.get_judgment_history', return_value=[RELATED]) as history, \
+                    patch('judgment_app.acquisition.read_judgment_web.get_judgment_web', return_value={'text': '正文'}) as get_web, \
+                    patch('judgment_app.acquisition.read_judgment_web.get_judgment_pdf', return_value=b'%PDF-test') as get_pdf, \
+                    patch('judgment_app.acquisition.download_judgments.get_token', return_value='token'), \
+                    patch('judgment_app.acquisition.download_judgments.get_judgment', return_value={}) as get_api:
                 report = download_cases([CASE], folder, web=web, pdf=pdf, api=api, history=True)
                 expected = ({'.txt'} if web else set()) | ({'.pdf'} if pdf else set())
                 self.assertEqual({Path(f).suffix for f in report['history_files']}, expected)
@@ -105,10 +133,10 @@ class HistoryTests(unittest.TestCase):
                 self.assertFalse(report['history_files'])
                 self.assertEqual(len(report['history_skipped']), len(expected))
 
-    @patch('judgment_app.read_judgment_web.search_judgments', return_value=[ORIGINAL])
-    @patch('judgment_app.read_judgment_web.get_judgment_history', return_value=[RELATED])
-    @patch('judgment_app.read_judgment_web.get_judgment_web', side_effect=[{'text': '正文'}, RuntimeError('失敗')])
-    @patch('judgment_app.read_judgment_web.get_judgment_pdf', return_value=b'%PDF-test')
+    @patch('judgment_app.acquisition.read_judgment_web.case_to_jids', return_value=[ORIGINAL])
+    @patch('judgment_app.acquisition.read_judgment_web.get_judgment_history', return_value=[RELATED])
+    @patch('judgment_app.acquisition.read_judgment_web.get_judgment_web', side_effect=[{'text': '正文'}, RuntimeError('失敗')])
+    @patch('judgment_app.acquisition.read_judgment_web.get_judgment_pdf', return_value=b'%PDF-test')
     def test_history_txt_failure_still_downloads_pdf(self, pdf, web, history, search):
         with TemporaryDirectory() as folder:
             report = download_cases([CASE], folder, web=True, pdf=True, history=True)

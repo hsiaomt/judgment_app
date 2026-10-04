@@ -7,16 +7,16 @@ from pathlib import Path
 import requests
 
 from judgment_app.case_number import CaseNumber
-from judgment_app.read_judgment_web import MeasuredSession, get_judgment_web, get_judgment_pdf, download_cases, save_document, run_batch, download_case_pdfs
-from judgment_app.read_judgment_web import case_to_jids
+from judgment_app.acquisition.read_judgment_web import MeasuredSession, get_judgment_web, get_judgment_pdf, download_cases, save_document, run_batch, download_case_pdfs
+from judgment_app.acquisition.read_judgment_web import case_to_jids
 
 
 class WebJudgmentTests(unittest.TestCase):
-    @patch("judgment_app.download_judgments.get_judgment")
-    @patch("judgment_app.download_judgments.get_token", return_value="test-token")
-    @patch("judgment_app.read_judgment_web.get_judgment_web")
-    @patch("judgment_app.read_judgment_web.get_judgment_pdf")
-    @patch("judgment_app.read_judgment_web.search_judgments")
+    @patch("judgment_app.acquisition.download_judgments.get_judgment")
+    @patch("judgment_app.acquisition.download_judgments.get_token", return_value="test-token")
+    @patch("judgment_app.acquisition.read_judgment_web.get_judgment_web")
+    @patch("judgment_app.acquisition.read_judgment_web.get_judgment_pdf")
+    @patch("judgment_app.acquisition.read_judgment_web.search_judgments")
     def test_api_only_searches_jid_and_saves_json(self, search, pdf, web, token, api):
         jid = "TPDM,114,訴,218,20250328,1"
         search.return_value = [jid]
@@ -40,10 +40,10 @@ class WebJudgmentTests(unittest.TestCase):
             self.assertTrue(any("已取得 JID" in text for text in messages))
             self.assertTrue(any("下載成功" in text for text in messages))
 
-    @patch("judgment_app.download_judgments.get_token")
-    @patch("judgment_app.read_judgment_web.get_judgment_web")
-    @patch("judgment_app.read_judgment_web.get_judgment_pdf", return_value=b"%PDF-test")
-    @patch("judgment_app.read_judgment_web.search_judgments", return_value=["TPDM,114,訴,218,20250328,1"])
+    @patch("judgment_app.acquisition.download_judgments.get_token")
+    @patch("judgment_app.acquisition.read_judgment_web.get_judgment_web")
+    @patch("judgment_app.acquisition.read_judgment_web.get_judgment_pdf", return_value=b"%PDF-test")
+    @patch("judgment_app.acquisition.read_judgment_web.search_judgments", return_value=["TPDM,114,訴,218,20250328,1"])
     def test_existing_formats_skip_before_download(self, search, pdf, web, token):
         with TemporaryDirectory() as folder:
             name = "臺灣臺北地方法院114年度訴字第218號"
@@ -76,11 +76,11 @@ class WebJudgmentTests(unittest.TestCase):
             self.assertNotEqual(first, second)
             self.assertEqual(first.read_bytes(), b"first")
 
-    @patch("judgment_app.download_judgments.get_judgment", return_value={"content": "api"})
-    @patch("judgment_app.download_judgments.get_token", return_value="test")
-    @patch("judgment_app.read_judgment_web.get_judgment_pdf", return_value=b"%PDF-test")
-    @patch("judgment_app.read_judgment_web.get_judgment_web", return_value={"text": "正文"})
-    @patch("judgment_app.read_judgment_web.search_judgments", return_value=["TPDM,114,訴,218,20250328,1", "TPDM,114,訴,218,20250428,1"])
+    @patch("judgment_app.acquisition.download_judgments.get_judgment", return_value={"content": "api"})
+    @patch("judgment_app.acquisition.download_judgments.get_token", return_value="test")
+    @patch("judgment_app.acquisition.read_judgment_web.get_judgment_pdf", return_value=b"%PDF-test")
+    @patch("judgment_app.acquisition.read_judgment_web.get_judgment_web", return_value={"text": "正文"})
+    @patch("judgment_app.acquisition.read_judgment_web.search_judgments", return_value=["TPDM,114,訴,218,20250328,1", "TPDM,114,訴,218,20250428,1"])
     def test_all_modes_search_once_and_number_documents(self, search, web, pdf, token, api):
         with TemporaryDirectory() as folder:
             report = download_cases([CaseNumber(court="TPD", year=114, case="訴", number=218)], folder, web=True, pdf=True, api=True)
@@ -129,8 +129,8 @@ class WebJudgmentTests(unittest.TestCase):
         self.assertEqual(session.post.call_args.kwargs["data"]["jud_court"], "TPH")
         self.assertEqual(session.post.call_args.kwargs["data"]["jud_sys"], "M")
 
-    @patch("judgment_app.read_judgment_web.read_case_numbers")
-    @patch("judgment_app.read_judgment_web.search_judgments", return_value=[])
+    @patch("judgment_app.acquisition.read_judgment_web.read_case_numbers")
+    @patch("judgment_app.acquisition.read_judgment_web.search_judgments", return_value=[])
     def test_batch_serializes_case_number(self, search, read):
         case = CaseNumber("TPD", 114, "訴", 219)
         read.return_value = [case]
@@ -144,8 +144,8 @@ class WebJudgmentTests(unittest.TestCase):
                              {"court": "TPD", "year": 114, "case": "訴", "number": 219})
             self.assertEqual(search.call_args.args, (case,))
 
-    @patch("judgment_app.read_judgment_web.search_judgments", return_value=["TPDM,114,訴,219,20250328,1"])
-    @patch("judgment_app.read_judgment_web.get_judgment_pdf", return_value=b"%PDF-test")
+    @patch("judgment_app.acquisition.read_judgment_web.search_judgments", return_value=["TPDM,114,訴,219,20250328,1"])
+    @patch("judgment_app.acquisition.read_judgment_web.get_judgment_pdf", return_value=b"%PDF-test")
     def test_download_case_pdfs_accepts_case_number(self, pdf, search):
         case = CaseNumber("TPD", 114, "訴", 219)
         with TemporaryDirectory() as folder:

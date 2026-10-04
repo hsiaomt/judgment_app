@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from judgment_app import paths
-from judgment_app import download_judgments as api
+from judgment_app.acquisition import download_judgments as api
 from judgment_app.exceptions import ApiResponseError
 
 

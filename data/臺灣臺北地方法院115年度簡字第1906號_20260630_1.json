@@ -1,0 +1,116 @@
+{
+  "jid": "",
+  "defendants": [
+    {
+      "name": "陳俊男",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "攜帶兇器竊盜罪",
+          "is_attempted": true,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 321,
+              "article_sub": null,
+              "paragraph": 1,
+              "part": null,
+              "subparagraph": 3
+            },
+            {
+              "law_name": "刑法",
+              "article": 321,
+              "article_sub": null,
+              "paragraph": 2,
+              "part": null,
+              "subparagraph": null
+            }
+          ],
+          "times": 1,
+          "penalty": 3,
+          "penalty_to_fine": 1000,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }, 
+        {
+          "crime_id": 2,
+          "crime_name": "攜帶兇器竊盜罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 321,
+              "article_sub": null,
+              "paragraph": 1,
+              "part": null,
+              "subparagraph": 3
+            },
+            {
+              "law_name": "刑法",
+              "article": 321,
+              "article_sub": null,
+              "paragraph": 2,
+              "part": null,
+              "subparagraph": null
+            }
+          ],
+          "times": 1,
+          "penalty": 3,
+          "penalty_to_fine": 1000,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1
+          ],
+          "is_guilty": true,
+          "executed_penalty": 3,
+          "executed_penalty_to_fine": 1000,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": null,
+          "executed_addition_fine_to_detention": null
+        }, 
+        {
+          "crime_ids": [
+            2
+          ],
+          "is_guilty": true,
+          "executed_penalty": 3,
+          "executed_penalty_to_fine": 1000,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": null,
+      "probation": null,
+      "probation_law": null,
+      "confiscation": [
+        "扳手1把"
+      ]
+    }
+  ],
+  "lower_court_case_number": null,
+  "is_pros_appeal": null,
+  "pros_appearing": null
+}

@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field, replace
 
+from datetime import datetime
 import re
 
 COURT_MAP = {
-    "": "所有法院",
     "JCC": "憲法法庭",
     "TPC": "司法院刑事補償法庭",
     "TPU": "司法院－訴願決定",
@@ -72,6 +72,14 @@ class CaseNumber:
     def from_jid(cls, jid: str, *, original_case: "CaseNumber | None" = None) -> "CaseNumber":
         return replace(JudgmentId.from_string(jid).case_number, original_case=original_case)
 
+    @classmethod
+    def from_string(cls, case_number: str) -> "CaseNumber":
+        match = re.fullmatch(r"(.+?)([0-9]+)年度(.+?)字第([0-9]+)號", re.sub(r"\s+", "", case_number))
+        if not match:
+            raise ValueError(f"無法辨識資料夾或檔名的案號：{case_number}")
+        court, year, case, number = match.groups()
+        return CaseNumber(court, int(year), case, int(number))
+
     @property
     def court_name(self) -> str:
         return COURT_MAP[self.court]
@@ -98,7 +106,11 @@ class JudgmentId:
 
     def __post_init__(self) -> None:
         if not isinstance(self.date, str) or not re.fullmatch(r"\d{8}", self.date):
-            raise ValueError(f"日期格式不合法：{self.date!r}")
+            raise ValueError(f"日期格式必須為 YYYYMMDD：{self.date!r}")
+        try:
+            datetime.strptime(self.date, "%Y%m%d")
+        except ValueError as exc:
+            raise ValueError(f"日期不存在：{self.date!r}") from exc
         if isinstance(self.sequence, bool) or not isinstance(self.sequence, int) or self.sequence < 0:
             raise ValueError(f"序號必須是非負整數：{self.sequence!r}")
         if not isinstance(self.category, str) or len(self.category) != 1 or not re.fullmatch(r"[A-Z]+", self.category):
@@ -127,7 +139,7 @@ class JudgmentId:
 
     @property
     def file_name(self) -> str:
-        return self.case_number.file_name
+        return f"{self.case_number.file_name}_{self.date}_{self.sequence}"
 
     def to_string(self) -> str:
         parts = [

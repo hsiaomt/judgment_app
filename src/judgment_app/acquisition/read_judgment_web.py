@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup, Comment, NavigableString
 
 from judgment_app.case_number import CaseNumber, JudgmentId
 from judgment_app.exceptions import ApiResponseError
-from judgment_app.read_case_numbers import read_case_numbers
+from judgment_app.acquisition.read_case_numbers import read_case_numbers
 from judgment_app.paths import resolve_output_path
 
 SEARCH_URL = "https://judgment.judicial.gov.tw/FJUD/Default_AD.aspx"
@@ -248,7 +248,7 @@ def download_cases(cases: list[CaseNumber], output, *, web=False, pdf=False, api
     """GUI 共用入口；背景執行緒可透過 progress 回報進度。"""
     if not any((web, pdf, api)):
         raise ValueError("請至少選擇一個下載項目")
-    from judgment_app.download_judgments import get_token, get_judgment
+    from judgment_app.acquisition.download_judgments import get_token, get_judgment
 
     report = {"files": [], "empty": [], "errors": [], "skipped": [], "failed_cases": [], "history_files": [], "history_skipped": []}
     history = history and (web or pdf)
@@ -267,8 +267,8 @@ def download_cases(cases: list[CaseNumber], output, *, web=False, pdf=False, api
                     on_result(f"無符合結果或未公開：{case.to_string()}")
             folder = Path(output) / case.file_name if history else Path(output)
             history_seen = set(jids)
-            for order, jid in enumerate(jids, 1):
-                name = jid.file_name + (f"_{order}" if len(jids) > 1 else "")
+            for jid in jids:
+                name = jid.file_name
                 for enabled, mode, suffix in ((web, "網頁全文", ".txt"), (pdf, "PDF", ".pdf"), (api, "API", ".json")):
                     if not enabled:
                         continue
@@ -343,7 +343,7 @@ def download_history(jid: JudgmentId, original: CaseNumber, folder, session, see
             continue
         seen.add(related)
         # 日期與版本區分同案號的多份判決，重跑時檔名保持固定。
-        name = related.file_name + "_" + re.sub(r"[^0-9A-Za-z_-]", "_", "_".join(related.to_string().split(",")[4:]))
+        name = related.file_name
         for enabled, mode, suffix in ((web, "網頁全文", ".txt"), (pdf, "PDF", ".pdf")):
             if not enabled:
                 continue
@@ -370,8 +370,8 @@ def download_case_pdfs(case_number: CaseNumber, output: str | Path) -> list[Path
     with requests.Session() as session:
         jids = case_to_jids(case_number, session=session)
         paths = []
-        for index, jid in enumerate(jids, 1):
-            name = jid.file_name + (f"_{index}" if len(jids) > 1 else "")
+        for jid in jids:
+            name = jid.file_name
             paths.append(save_document(output, name, ".pdf", get_judgment_pdf(jid, session=session)))
         return paths
 

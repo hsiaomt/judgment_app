@@ -5,9 +5,9 @@ import unittest
 from unittest.mock import patch
 
 from judgment_app.case_number import CaseNumber, JudgmentId
-from judgment_app.download_judgments import get_judgment, save_all_judgments
+from judgment_app.acquisition.download_judgments import get_judgment, save_all_judgments
 from judgment_app.exceptions import ApiResponseError
-from judgment_app.read_judgment_web import case_label, judgment_filename
+from judgment_app.acquisition.read_judgment_web import case_label, judgment_filename
 
 
 class CaseNumberTests(unittest.TestCase):
@@ -55,17 +55,17 @@ class CaseNumberTests(unittest.TestCase):
     def test_api_keeps_exact_jid_and_rejects_another_document(self):
         jid = "TPDM,114,訴,219,20250328,1"
         data = dict(JID=jid, JYEAR=114, JCASE="訴", JNO=219, JDATE="20250328", JTITLE="測試", JFULLX={"JFULLCONTENT": "正文"})
-        with patch("judgment_app.download_judgments.post_json", return_value=data) as post:
+        with patch("judgment_app.acquisition.download_judgments.post_json", return_value=data) as post:
             self.assertEqual(get_judgment("token", jid), data)
             self.assertEqual(post.call_args.args[1]["j"], jid)
-        with patch("judgment_app.download_judgments.post_json", return_value=data | {"JID": jid[:-1] + "2"}):
+        with patch("judgment_app.acquisition.download_judgments.post_json", return_value=data | {"JID": jid[:-1] + "2"}):
             with self.assertRaises(ApiResponseError):
                 get_judgment("token", jid)
 
     def test_bulk_download_filters_category_and_records_invalid_jid(self):
         criminal = "TPDM,114,訴,219,20250328,1"
         civil = "TPDV,114,訴,219,20250328,1"
-        with TemporaryDirectory() as folder, patch("judgment_app.download_judgments.get_jid_json", return_value={"date": "20250328", "list": [criminal, civil, "invalid"]}), patch("judgment_app.download_judgments.get_judgment", return_value={"text": "正文"}) as get:
+        with TemporaryDirectory() as folder, patch("judgment_app.acquisition.download_judgments.get_jid_json", return_value={"date": "20250328", "list": [criminal, civil, "invalid"]}), patch("judgment_app.acquisition.download_judgments.get_judgment", return_value={"text": "正文"}) as get:
             save_all_judgments("token", Path(folder))
             get.assert_called_once_with("token", criminal)
             errors = json.loads((Path(folder) / "20250328" / "except.json").read_text())

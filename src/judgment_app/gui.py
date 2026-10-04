@@ -10,9 +10,10 @@ from tkinter import filedialog, messagebox, ttk
 
 import pandas as pd
 
+from judgment_app.analysis.analyze_judgment import analyze_folder
 from judgment_app.case_number import COURT_MAP, CaseNumber
-from judgment_app.read_case_numbers import read_case_numbers
-from judgment_app.read_judgment_web import download_cases
+from judgment_app.acquisition.read_case_numbers import read_case_numbers
+from judgment_app.acquisition.read_judgment_web import download_cases
 from judgment_app.paths import default_output_dir, resolve_output_path
 
 
@@ -66,6 +67,7 @@ class CaseReaderApp:
         self.status = tk.StringVar(value="請先選擇 Excel 檔案。")
         self.controls = []
         self.output = tk.StringVar(value=str(default_output_dir()))
+        self.analysis_provider = tk.StringVar(value="openai")
         self.web = tk.BooleanVar(value=True)
         self.history = tk.BooleanVar(value=True)
         self.pdf = tk.BooleanVar(value=False)
@@ -177,7 +179,14 @@ class CaseReaderApp:
         choose.grid(row=3, column=2)
         self.controls.extend(((destination, "normal"), (choose, "normal")))
         self.download_button = ttk.Button(downloads, text="依畫面順序下載全部案號", command=self.start_download, state="disabled")
-        self.download_button.grid(row=4, column=0, columnspan=3, sticky="w")
+        self.download_button.grid(row=4, column=0, columnspan=2, sticky="w")
+        self.analyze_button = ttk.Button(downloads, text="分析資料夾判決書", command=self.start_analysis)
+        self.analyze_button.grid(row=4, column=2, pady=(4, 0))
+        self.controls.append((self.analyze_button, "normal"))
+        provider_box = ttk.Combobox(downloads, textvariable=self.analysis_provider,
+                                    values=("openai", "gemini"), state="readonly", width=12)
+        provider_box.grid(row=5, column=2, pady=(4, 0))
+        self.controls.append((provider_box, "readonly"))
         log_frame = ttk.Frame(frame)
         log_frame.grid(row=7, column=0, columnspan=3, sticky="nsew")
         log_frame.columnconfigure(0, weight=1)
@@ -236,6 +245,25 @@ class CaseReaderApp:
         path = filedialog.askdirectory(parent=self.root, title="選擇判決書儲存資料夾")
         if path:
             self.output.set(path)
+
+    def start_analysis(self):
+        if self.busy:
+            return
+        value = self.output.get().strip()
+        if not value:
+            messagebox.showerror("分析設定", "請指定判決書儲存路徑。", parent=self.root)
+            return
+        output = resolve_output_path(value)
+        if not output.is_dir():
+            messagebox.showerror("分析設定", "儲存路徑不是有效的資料夾。", parent=self.root)
+            return
+        self.status.set("正在讀取資料夾內的判決書…")
+        provider = self.analysis_provider.get()
+        self.run_task("analysis", lambda: analyze_folder(
+            output, provider=provider,
+            progress=lambda text: self.events.put(("progress", text, None)),
+            on_result=lambda text: self.events.put(("result", text, None)),
+        ))
 
     def start_download(self):
         if not self.cases or self.busy:
@@ -395,6 +423,13 @@ class CaseReaderApp:
                 self.status.set("作業中止；已儲存的檔案仍保留。")
                 self.append_log(str(error))
                 messagebox.showerror("作業失敗", str(error), parent=self.root)
+            elif kind == "analysis":
+                summary = (f"分析完成：成功 {len(result['files'])} 份，失敗 {len(result['errors'])} 份。"
+                           if result["total"] else "資料夾內沒有 TXT／JSON 判決書。")
+                self.status.set(summary)
+                self.append_log(summary)
+                for output in result["outputs"]:
+                    self.append_log(f"JSON：{output}")
             elif kind == "download":
                 summary = f"下載完成：原始判決 {len(result['files'])} 個檔案；歷審判決 {len(result.get('history_files', []))} 個檔案；原始 {len(result['skipped'])} 個已存在並跳過；歷審 {len(result.get('history_skipped', []))} 個已存在並跳過；{len(result['empty'])} 個案號無符合結果；{len(result['errors'])} 項失敗。"
                 self.status.set(summary)
@@ -407,8 +442,8 @@ class CaseReaderApp:
                     for case in cases:
                         annotation = ""
                         if original := case.original_case:
-                            annotation = f"（原始案號：{original.label}）"
-                        self.append_log(f"{case.label}{annotation}")
+                            annotation = f"（原始案號：{original.to_string()}）"
+                        self.append_log(f"{case.to_string()}{annotation}")
                 if result["errors"]:
                     self.append_log("\n【失敗原因】")
                     for detail in result["errors"]:

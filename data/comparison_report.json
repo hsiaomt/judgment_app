@@ -1,0 +1,2001 @@
+{
+  "rows": [
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 4,
+      "name": "高盛營○○",
+      "case_number": "臺灣高等法院115年度上訴字第1299號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第1299號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 5,
+      "name": "高盛營○○",
+      "case_number": "臺灣高等法院115年度上訴字第1299號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第1299號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 6,
+      "name": "巫○○",
+      "case_number": "臺灣臺北地方法院115年度金訴字第10號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度金訴字第10號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 7,
+      "name": "李○○",
+      "case_number": "臺灣高等法院115年度上訴字第1299號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第1299號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 8,
+      "name": "郭○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第1445號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第1445號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 9,
+      "name": "艾○○",
+      "case_number": "臺灣臺北地方法院114年度金訴字第2號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度金訴字第2號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 10,
+      "name": "劉○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第1578號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第1578號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 11,
+      "name": "王○○",
+      "case_number": "臺灣高等法院115年度上訴字第2997號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第2997號.json",
+      "status": "unmatched",
+      "reason": "法條／刑度無符合候選",
+      "candidate_crime_ids": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 12,
+      "name": "張○○",
+      "case_number": "臺灣臺北地方法院115年度訴字第214號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度訴字第214號.json",
+      "status": "unmatched",
+      "reason": "法條／刑度無符合候選",
+      "candidate_crime_ids": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 13,
+      "name": "陳○○",
+      "case_number": "臺灣臺北地方法院112年度金訴字第21號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院112年度金訴字第21號.json",
+      "status": "unmatched",
+      "reason": "被告姓名無法唯一配對"
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 14,
+      "name": "林○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第759號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第759號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 15,
+      "name": "王○○",
+      "case_number": "臺灣高等法院112年度上訴字第1850號",
+      "status": "unmatched",
+      "reason": "判決不存在或同案號有多份判決",
+      "candidates": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 16,
+      "name": "陳○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第647號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第647號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 17,
+      "name": "陳○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第647號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第647號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 18,
+      "name": "鄭○○",
+      "case_number": "最高法院115年度台上字第2707號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第2707號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 19,
+      "name": "楊○○",
+      "case_number": "臺灣臺北地方法院111年度金訴字第45號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院111年度金訴字第45號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 20,
+      "name": "李○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第1721號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第1721號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 21,
+      "name": "陳○○",
+      "case_number": "臺灣臺北地方法院115年度簡字第1906號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度簡字第1906號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 22,
+      "name": "張○○",
+      "case_number": "臺灣高等法院115年度上訴字第1383號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第1383號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 23,
+      "name": "田○○",
+      "status": "invalid",
+      "reason": "law_name 、 article 不可空白"
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 24,
+      "name": "王○○",
+      "case_number": "臺灣高等法院115年度上訴字第2851號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第2851號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 25,
+      "name": "陳○○",
+      "case_number": "臺灣高等法院115年度上訴字第1666號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第1666號.json",
+      "status": "unmatched",
+      "reason": "被告姓名無法唯一配對"
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 26,
+      "name": "蔡○○",
+      "case_number": "臺灣高等法院115年度上訴字第1383號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第1383號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 27,
+      "name": "夏○○",
+      "case_number": "臺灣臺北地方法院115年度訴字第664號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度訴字第664號.json",
+      "status": "unmatched",
+      "reason": "法條／刑度無符合候選",
+      "candidate_crime_ids": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 28,
+      "name": "林○○",
+      "case_number": "臺灣高等法院115年度上訴字第686號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第686號.json",
+      "candidate_crime_ids": [
+        3
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 29,
+      "name": "林○○",
+      "case_number": "臺灣高等法院115年度上訴字第686號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第686號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 30,
+      "name": "林○○",
+      "case_number": "臺灣高等法院115年度上訴字第686號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第686號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 31,
+      "name": "蔡○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第917號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第917號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 32,
+      "name": "江○○",
+      "case_number": "臺灣臺北地方法院115年度審簡字第1214號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審簡字第1214號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 33,
+      "name": "廖○○",
+      "case_number": "臺灣臺北地方法院115年度訴字第566號",
+      "status": "unmatched",
+      "reason": "判決不存在或同案號有多份判決",
+      "candidates": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 34,
+      "name": "吳○○",
+      "case_number": "臺灣臺北地方法院112年度金訴字第10號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院112年度金訴字第10號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 35,
+      "name": "楊○○",
+      "case_number": "臺灣臺北地方法院115年度審簡字第1374號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審簡字第1374號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 36,
+      "name": "陳○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第242號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第242號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 37,
+      "name": "陳○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第242號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第242號.json",
+      "candidate_crime_ids": [
+        3
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 38,
+      "name": "陳○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第242號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第242號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 39,
+      "name": "陳○○",
+      "case_number": "臺灣臺北地方法院115年度審簡字第417號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審簡字第417號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 40,
+      "name": "TEOWW○○",
+      "case_number": "臺灣臺北地方法院115年度審簡字第1501號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審簡字第1501號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 41,
+      "name": "林○○",
+      "case_number": "臺灣高等法院115年度上易字第260號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上易字第260號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 42,
+      "name": "呂○○",
+      "case_number": "臺灣臺北地方法院114年度侵訴字第111號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度侵訴字第111號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 43,
+      "name": "許○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第182號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第182號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 44,
+      "name": "傅○○",
+      "case_number": "臺灣臺北地方法院115年度訴字第216號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度訴字第216號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 45,
+      "name": "傅○○",
+      "case_number": "臺灣臺北地方法院115年度訴字第216號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度訴字第216號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 46,
+      "name": "謝○○",
+      "case_number": "臺灣高等法院115年度上訴字第1770號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第1770號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 47,
+      "name": "黃○○",
+      "case_number": "臺灣高等法院115年度上訴字第2467號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第2467號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 48,
+      "name": "戴○○",
+      "case_number": "最高法院115年度台上字第3796號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第3796號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 49,
+      "name": "謝○○",
+      "case_number": "臺灣臺北地方法院112年度金訴字第10號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院112年度金訴字第10號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 50,
+      "name": "洪○○",
+      "case_number": "最高法院115年度台上字第2701號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第2701號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 51,
+      "name": "洪○○",
+      "case_number": "最高法院115年度台上字第2701號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第2701號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 52,
+      "name": "洪○○",
+      "case_number": "最高法院115年度台上字第2701號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第2701號.json",
+      "candidate_crime_ids": [
+        3
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 53,
+      "name": "洪○○",
+      "case_number": "最高法院115年度台上字第2701號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第2701號.json",
+      "candidate_crime_ids": [
+        4
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 54,
+      "name": "孫○○",
+      "case_number": "臺灣臺北地方法院112年度金訴字第21號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院112年度金訴字第21號.json",
+      "status": "unmatched",
+      "reason": "被告姓名無法唯一配對"
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 55,
+      "name": "繆○○",
+      "case_number": "最高法院115年度台上字第2701號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第2701號.json",
+      "status": "unmatched",
+      "reason": "被告姓名無法唯一配對"
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 56,
+      "name": "繆○○",
+      "case_number": "最高法院115年度台上字第2701號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第2701號.json",
+      "status": "unmatched",
+      "reason": "被告姓名無法唯一配對"
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 57,
+      "name": "王○○",
+      "case_number": "最高法院115年度台上字第3066號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第3066號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 58,
+      "name": "陳○○",
+      "case_number": "臺灣臺北地方法院112年度金訴字第10號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院112年度金訴字第10號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 59,
+      "name": "YAPSE○○",
+      "case_number": "臺灣臺北地方法院115年度訴字第236號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度訴字第236號.json",
+      "candidate_crime_ids": [
+        8
+      ],
+      "status": "different",
+      "differences": [
+        {
+          "column": "未遂",
+          "field": "crimes[crime_id=8].is_attempted",
+          "excel_raw": "",
+          "excel_value": false,
+          "json_value": true
+        }
+      ],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 60,
+      "name": "吳○○",
+      "case_number": "臺灣高等法院115年度上訴字第660號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第660號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 61,
+      "name": "張○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第512號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第512號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 62,
+      "name": "陳○○",
+      "case_number": "臺灣高等法院115年度上訴字第2014號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第2014號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 63,
+      "name": "許○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第1437號",
+      "status": "unmatched",
+      "reason": "判決不存在或同案號有多份判決",
+      "candidates": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 64,
+      "name": "張○○",
+      "case_number": "臺灣臺北地方法院114年度金訴字第2號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度金訴字第2號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 65,
+      "name": "李○○",
+      "case_number": "臺灣高等法院115年度上訴字第659號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第659號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 66,
+      "name": "謝○○",
+      "case_number": "臺灣臺北地方法院114年度金訴字第65號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度金訴字第65號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 67,
+      "name": "王○○",
+      "case_number": "臺灣臺北地方法院112年度原金訴字第2號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院112年度原金訴字第2號.json",
+      "status": "unmatched",
+      "reason": "被告姓名無法唯一配對"
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 68,
+      "name": "溫○○",
+      "case_number": "臺灣臺北地方法院115年度審簡字第372號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審簡字第372號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 69,
+      "name": "溫○○",
+      "case_number": "臺灣臺北地方法院115年度審簡字第372號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審簡字第372號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 70,
+      "name": "毛○○",
+      "case_number": "臺灣高等法院114年度侵上訴字第331號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院114年度侵上訴字第331號.json",
+      "status": "unmatched",
+      "reason": "法條／刑度無符合候選",
+      "candidate_crime_ids": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 71,
+      "name": "毛○○",
+      "case_number": "臺灣臺北地方法院113年度侵訴字第110號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院113年度侵訴字第110號.json",
+      "status": "unmatched",
+      "reason": "法條／刑度無符合候選",
+      "candidate_crime_ids": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 72,
+      "name": "毛○○",
+      "case_number": "臺灣高等法院114年度侵上訴字第331號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院114年度侵上訴字第331號.json",
+      "status": "unmatched",
+      "reason": "法條／刑度無符合候選",
+      "candidate_crime_ids": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 73,
+      "name": "毛○○",
+      "case_number": "臺灣臺北地方法院113年度侵訴字第110號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院113年度侵訴字第110號.json",
+      "candidate_crime_ids": [
+        11
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 74,
+      "name": "陳○○",
+      "case_number": "最高法院115年度台上字第2701號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第2701號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 75,
+      "name": "陳○○",
+      "case_number": "最高法院115年度台上字第2701號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第2701號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 76,
+      "name": "張○○",
+      "case_number": "臺灣臺北地方法院115年度訴字第398號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度訴字第398號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 77,
+      "name": "張○○",
+      "case_number": "臺灣臺北地方法院115年度訴字第398號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度訴字第398號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 78,
+      "name": "張○○",
+      "case_number": "最高法院115年度台上字第3563號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第3563號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 79,
+      "name": "張○○",
+      "case_number": "最高法院115年度台上字第3563號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第3563號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 80,
+      "name": "張○○",
+      "case_number": "最高法院115年度台上字第3563號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第3563號.json",
+      "candidate_crime_ids": [
+        3
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 81,
+      "name": "張○○",
+      "case_number": "臺灣臺北地方法院113年度重訴字第18號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院113年度重訴字第18號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 82,
+      "name": "王○○",
+      "case_number": "臺灣臺北地方法院115年度審簡字第1238號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審簡字第1238號.json",
+      "candidate_crime_ids": [
+        1,
+        2,
+        3
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 83,
+      "name": "黃○○",
+      "case_number": "臺灣高等法院114年度上訴字第5701號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院114年度上訴字第5701號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 84,
+      "name": "王○○",
+      "case_number": "最高法院115年度台上字第3655號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第3655號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 85,
+      "name": "陳○○",
+      "case_number": "臺灣臺北地方法院115年度訴緝字第105號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度訴緝字第105號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 86,
+      "name": "黃○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第531號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第531號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 87,
+      "name": "洪○○",
+      "case_number": "臺灣臺北地方法院115年度審簡字第337號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審簡字第337號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 88,
+      "name": "NGUYEN○○",
+      "case_number": "臺灣高等法院115年度侵上訴字第52號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度侵上訴字第52號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 89,
+      "name": "邱○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第1567號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第1567號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 90,
+      "name": "蔣○○",
+      "case_number": "臺灣高等法院115年度上訴字第1576號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第1576號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 91,
+      "name": "蔣○○",
+      "case_number": "臺灣高等法院115年度上訴字第1576號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第1576號.json",
+      "candidate_crime_ids": [
+        3
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 92,
+      "name": "蔣○○",
+      "case_number": "臺灣高等法院115年度上訴字第1576號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第1576號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 93,
+      "name": "劉○○",
+      "case_number": "臺灣臺北地方法院114年度審簡字第2765號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度審簡字第2765號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 94,
+      "name": "劉○○",
+      "case_number": "臺灣臺北地方法院114年度審簡字第2765號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度審簡字第2765號.json",
+      "candidate_crime_ids": [
+        3
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 95,
+      "name": "廖○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第941號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第941號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 96,
+      "name": "魏○○",
+      "case_number": "臺灣高等法院115年度上訴字第1576號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第1576號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 97,
+      "name": "魏○○",
+      "case_number": "臺灣高等法院115年度上訴字第1576號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第1576號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 98,
+      "name": "戴○○",
+      "case_number": "臺灣臺北地方法院115年度審簡字第87號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審簡字第87號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 99,
+      "name": "張○○",
+      "case_number": "臺灣高等法院115年度上訴字第849號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第849號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 100,
+      "name": "翁○○",
+      "case_number": "臺灣高等法院115年度上訴字第780號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第780號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 101,
+      "name": "翁○○",
+      "case_number": "臺灣高等法院115年度上訴字第780號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第780號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 102,
+      "name": "方○○",
+      "case_number": "臺灣高等法院115年度侵上訴字第105號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度侵上訴字第105號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 103,
+      "name": "方○○",
+      "case_number": "臺灣高等法院115年度侵上訴字第105號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度侵上訴字第105號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 104,
+      "name": "方○○",
+      "case_number": "臺灣高等法院115年度侵上訴字第105號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度侵上訴字第105號.json",
+      "candidate_crime_ids": [
+        3
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 105,
+      "name": "方○○",
+      "case_number": "臺灣高等法院115年度侵上訴字第105號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度侵上訴字第105號.json",
+      "candidate_crime_ids": [
+        4
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 106,
+      "name": "林○○",
+      "case_number": "臺灣臺北地方法院115年度審簡上字第249號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審簡上字第249號.json",
+      "candidate_crime_ids": [
+        1,
+        2
+      ],
+      "status": "different",
+      "differences": [
+        {
+          "column": "未遂",
+          "field": "crimes[crime_id=1].is_attempted",
+          "excel_raw": "",
+          "excel_value": false,
+          "json_value": true
+        }
+      ],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 107,
+      "name": "黃○○",
+      "case_number": "最高法院115年度台上字第3829號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第3829號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 108,
+      "name": "陳○○",
+      "case_number": "臺灣高等法院115年度上訴字第2875號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第2875號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 109,
+      "name": "湛○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第911號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第911號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 110,
+      "name": "湛○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第911號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第911號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 111,
+      "name": "劉○○",
+      "case_number": "臺灣高等法院115年度上訴字第2307號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第2307號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 112,
+      "name": "孫○○",
+      "case_number": "臺灣臺北地方法院114年度軍侵訴字第2號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度軍侵訴字第2號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 113,
+      "name": "曾○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第246號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第246號.json",
+      "status": "unmatched",
+      "reason": "法條／刑度無符合候選",
+      "candidate_crime_ids": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 114,
+      "name": "DESMON○○",
+      "case_number": "臺灣臺北地方法院114年度審訴字第3401號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度審訴字第3401號.json",
+      "candidate_crime_ids": [
+        3
+      ],
+      "status": "different",
+      "differences": [
+        {
+          "column": "未遂",
+          "field": "crimes[crime_id=3].is_attempted",
+          "excel_raw": "",
+          "excel_value": false,
+          "json_value": true
+        }
+      ],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 115,
+      "name": "張○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第1068號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第1068號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 116,
+      "name": "許○○",
+      "case_number": "臺灣臺北地方法院113年度重訴字第18號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院113年度重訴字第18號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 117,
+      "name": "黃○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第266號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第266號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 118,
+      "name": "林○○",
+      "case_number": "最高法院115年度台上字第3537號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第3537號.json",
+      "candidate_crime_ids": [
+        4
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 119,
+      "name": "林○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第246號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第246號.json",
+      "status": "unmatched",
+      "reason": "法條／刑度無符合候選",
+      "candidate_crime_ids": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 120,
+      "name": "黃○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第462號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第462號.json",
+      "status": "unmatched",
+      "reason": "法條／刑度無符合候選",
+      "candidate_crime_ids": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 121,
+      "name": "王○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第617號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第617號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 122,
+      "name": "丘○○",
+      "case_number": "臺灣臺北地方法院114年度軍侵訴字第2號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度軍侵訴字第2號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 123,
+      "name": "李○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第182號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第182號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 124,
+      "name": "林○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第1480號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第1480號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 125,
+      "name": "阮○○",
+      "case_number": "最高法院115年度台上字第3749號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第3749號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 126,
+      "name": "官○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第182號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第182號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 127,
+      "name": "林○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第934號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第934號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 128,
+      "name": "蔡○○",
+      "case_number": "臺灣高等法院115年度上訴字第2294號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第2294號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 129,
+      "name": "葉○○",
+      "case_number": "最高法院115年度台上字第3721號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/最高法院115年度台上字第3721號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 130,
+      "name": "張○○",
+      "case_number": "臺灣臺北地方法院113年度訴字第466號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院113年度訴字第466號.json",
+      "status": "unmatched",
+      "reason": "法條／刑度無符合候選",
+      "candidate_crime_ids": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 131,
+      "name": "吳○○",
+      "case_number": "臺灣臺北地方法院114年度審訴字第239號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度審訴字第239號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 132,
+      "name": "鄒○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第1796號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第1796號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 133,
+      "name": "曾○○",
+      "case_number": "臺灣高等法院115年度上訴字第2216號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第2216號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 134,
+      "name": "曾○○",
+      "case_number": "臺灣高等法院115年度上訴字第2216號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第2216號.json",
+      "candidate_crime_ids": [
+        3
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 135,
+      "name": "黃○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第246號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第246號.json",
+      "status": "unmatched",
+      "reason": "法條／刑度無符合候選",
+      "candidate_crime_ids": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 136,
+      "name": "詹○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第844號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第844號.json",
+      "status": "unmatched",
+      "reason": "被告姓名無法唯一配對"
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 137,
+      "name": "姜○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第1500號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第1500號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 138,
+      "name": "姜○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第1500號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第1500號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 139,
+      "name": "姜○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第1500號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第1500號.json",
+      "candidate_crime_ids": [
+        3
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 140,
+      "name": "DANGB○○",
+      "case_number": "臺灣臺北地方法院115年度審簡上字第125號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審簡上字第125號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 141,
+      "name": "彭○○",
+      "case_number": "臺灣臺北地方法院115年度審訴緝字第79號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴緝字第79號.json",
+      "status": "unmatched",
+      "reason": "法條／刑度無符合候選",
+      "candidate_crime_ids": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 142,
+      "name": "彭○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第1583號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第1583號.json",
+      "candidate_crime_ids": [
+        3
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 143,
+      "name": "彭○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第1583號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第1583號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 144,
+      "name": "郭○○",
+      "case_number": "臺灣高等法院115年度上訴字第2661號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣高等法院115年度上訴字第2661號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 145,
+      "name": "張○○",
+      "case_number": "臺灣臺北地方法院114年度訴字第182號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院114年度訴字第182號.json",
+      "candidate_crime_ids": [
+        1
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    },
+    {
+      "excel": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "row": 146,
+      "name": "NEOH○○",
+      "case_number": "臺灣臺北地方法院115年度審訴字第1391號",
+      "json": "/Users/hsiaomt/Desktop/Judgments_依資料夾JSON/臺灣臺北地方法院115年度審訴字第1391號.json",
+      "candidate_crime_ids": [
+        2
+      ],
+      "status": "equal",
+      "differences": [],
+      "uncomparable": []
+    }
+  ],
+  "errors": [
+    {
+      "file": "/Users/hsiaomt/judgment_app/data/未命名的試算表.xlsx",
+      "sheet": "工作表1",
+      "error": "找不到裁判案號及姓名標題列"
+    }
+  ],
+  "sheets": [
+    {
+      "file": "/Users/hsiaomt/judgment_app/data/221000122_裁判確定執行刑度與犯罪主法條法定刑度檢核_彙整(01032970).xls",
+      "sheet": "工作表1",
+      "uncompared_columns": [
+        "機關",
+        "股別",
+        "統計年月",
+        "年度",
+        "冠字代碼",
+        "冠字",
+        "號數",
+        "出生日期",
+        "分案日期",
+        "編號",
+        "明細案由",
+        "條段",
+        "版本",
+        "裁判情形",
+        "併科罰金",
+        "差異原因",
+        "死刑",
+        "無期",
+        "徒刑下限",
+        "徒刑上限",
+        "罰金下限",
+        "罰金上限",
+        "未敘明罰金",
+        "併科罰金下限",
+        "併科罰金上限",
+        "未敘明併科罰金",
+        "裁判日期"
+      ]
+    }
+  ],
+  "summary": {
+    "equal": 117,
+    "unmatched": 22,
+    "invalid": 1,
+    "different": 3,
+    "total": 143,
+    "errors": 1
+  }
+}

@@ -12,8 +12,8 @@ import xlrd
 from judgment_app.case_number import CaseNumber
 from judgment_app.gui import CaseReaderApp
 from judgment_app.paths import application_dir, default_output_dir
-from judgment_app.read_case_numbers import read_case_numbers
-from judgment_app.read_judgment_web import save_document
+from judgment_app.acquisition.read_case_numbers import read_case_numbers
+from judgment_app.acquisition.read_judgment_web import save_document
 
 
 def run(report_path: str, xls_path: str | None = None) -> None:
