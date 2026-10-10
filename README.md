@@ -9,8 +9,8 @@
 - `src/judgment_app/self_test.py`：打包執行檔自我檢查。
 - `tests/`：測試；`launcher.py`：PyInstaller 入口。
 
-模組已移至子套件；外部程式的 import 與 `python -m` 指令也須使用新路徑，例如
-`judgment_app.acquisition.read_case_numbers` 與 `judgment_app.analysis.analyze_judgment`。
+擷取模組位於 `judgment_app.acquisition.api` 與 `judgment_app.acquisition.web`，分析資料模型位於 `judgment_app.analysis.models`。外部程式的 import 與 `python -m` 指令須使用目前路徑，例如
+`judgment_app.acquisition.read_case_numbers` 與 `judgment_app.analysis.analyzer`。
 GUI 啟動指令與資料、`.env`、token 快取路徑維持不變。
 
 ## 判決書 AI 分析
@@ -20,7 +20,7 @@ GUI 啟動指令與資料、`.env`、token 快取路徑維持不變。
 GUI 分析按鈕下方可選 `openai` 或 `gemini`（預設 OpenAI）。使用 Gemini 時在 `.env` 填入 `GEMINI_API_KEY`，模型由 `GEMINI_MODEL` 指定，預設 `gemini-2.5-flash`；只需設定所選服務的金鑰。兩者沿用相同格式、歷審參考與 JSON 輸出及驗證流程。
 
 ```powershell
-uv run python -m judgment_app.analysis.analyze_judgment "判決書.json" --provider gemini
+uv run python -m judgment_app.analysis.analyzer "判決書.json" --provider gemini
 ```
 
 Gemini 串接依據 [Google GenerateContent API](https://ai.google.dev/api/generate-content)，使用 JSON Schema 結構化輸出。
@@ -30,13 +30,13 @@ GUI 可直接按「選擇資料夾…」下方的「分析資料夾判決書」�
 在 `.env` 設定 `OPENAI_API_KEY`，可選填 `OPENAI_MODEL`（預設 `gpt-4o-mini`），再執行：
 
 ```powershell
-uv run python -m judgment_app.analysis.analyze_judgment "判決書.txt" --output data/result.json
-uv run python -m judgment_app.analysis.analyze_judgment "判決書.json" --output data/result.json
+uv run python -m judgment_app.analysis.analyzer "判決書.txt" --output data/result.json
+uv run python -m judgment_app.analysis.analyzer "判決書.json" --output data/result.json
 ```
 
-每次讀取一份判決，將全文送至所選 AI API，依 `analysis_result.py` 的 dataclass 型別、欄位 `metadata["description"]` 與 `ANALYSIS_RULES` 擷取資料。支援 UTF-8 TXT、司法院 API JSON（`JID`、`JFULLX.JFULLCONTENT`），以及網頁 JSON（`jid`、`text`）；其他編碼可用 `--encoding cp950`。TXT 沒有來源 JID 時使用空字串，可透過 `--jid` 指定。`--model` 可覆寫模型設定。
+每次讀取一份判決，將全文送至所選 AI API，依 `models.py` 的 dataclass 型別、欄位 `metadata["description"]` 與 `ANALYSIS_RULES` 擷取資料。支援 UTF-8 TXT、司法院 API JSON（`JID`、`JFULLX.JFULLCONTENT`），以及網頁 JSON（`jid`、`text`）；其他編碼可用 `--encoding cp950`。TXT 沒有來源 JID 時使用空字串，可透過 `--jid` 指定。`--model` 可覆寫模型設定。
 
-每份 JSON 直接包含 `analysis_result.py` 的完整巢狀欄位。不完整、拒絕或驗證失敗的回應不會寫入，也不會覆蓋既有結果。`penalty` 與 `executed_penalty` 以月為單位，例如 4 年 2 月為 `50`。省略 `--output` 時輸出至來源檔旁；指定相對輸出路徑時沿用專案使用者資料目錄規則。
+每份 JSON 直接包含 `models.py` 的完整巢狀欄位。不完整、拒絕或驗證失敗的回應不會寫入，也不會覆蓋既有結果。`penalty` 與 `executed_penalty` 以月為單位，例如 4 年 2 月為 `50`。省略 `--output` 時輸出至來源檔旁；指定相對輸出路徑時沿用專案使用者資料目錄規則。
 
 程式也可匯入 `analyze_judgment()`，回傳 `JudgmentAnalysis`。`ANALYSIS_RESULT.md` 僅指向 Python 中的唯一規則來源，不再需要隨 EXE 打包，也不再提供 `--instructions`。
 
@@ -96,7 +96,7 @@ uv run python -m unittest discover -s tests -v
 ### 比對 Excel 與分析 JSON
 
 ```bash
-uv run python -m judgment_app.analysis.compare_analysis --excel data --json-dir data/judgments --output data/comparison_report.json
+uv run python -m judgment_app.analysis.compare --excel data --json-dir data/judgments --output data/comparison_report.json
 ```
 
 `--excel` 可指定單一 `.xls`／`.xlsx` 或資料夾，`--json-dir` 可指定單一分析 JSON 或資料夾；資料夾會遞迴搜尋。支援目前檢核表的標題列自動辨識與多工作表。

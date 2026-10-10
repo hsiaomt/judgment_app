@@ -9,8 +9,8 @@ from unittest.mock import Mock, patch
 
 import requests
 
-from judgment_app.analysis.analyze_judgment import analyze_judgment, read_judgment
-from judgment_app.analysis.analysis_result import (
+from judgment_app.analysis.analyzer import analyze_judgment, read_judgment
+from judgment_app.analysis.models import (
     CrimeAnalysis, DefendantAnalysis, ExecutionGroup, JudgmentAnalysis, LawReference,
 )
 
@@ -41,7 +41,7 @@ class AnalyzeJudgmentTests(unittest.TestCase):
         self.client = Mock()
         self.response = self.client.post.return_value
         self.response.json.return_value = self.payload()
-        self.settings = patch("judgment_app.analysis.analyze_judgment.load_settings")
+        self.settings = patch("judgment_app.analysis.analyzer.load_settings")
         self.settings.start()
         self.addCleanup(self.settings.stop)
         self.env = patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
@@ -160,7 +160,7 @@ class AnalyzeJudgmentTests(unittest.TestCase):
             if provider == "gemini":
                 self.response.json.return_value = {"candidates": [{"finishReason": "STOP",
                     "content": {"parts": [{"text": json.dumps(self.result)}]}}]}
-            with patch("judgment_app.analysis.analysis_result.ANALYSIS_RULES", "新版規則"), patch.dict(
+            with patch("judgment_app.analysis.models.ANALYSIS_RULES", "新版規則"), patch.dict(
                 os.environ, {"GEMINI_API_KEY": "test"}
             ):
                 self.run_analysis(provider=provider)

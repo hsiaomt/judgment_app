@@ -12,7 +12,7 @@ Python 3.12 + uv 專案。
 
 ## Rules
 
-- 設計方式(例如路徑)皆以日後要打包成執行檔為前提
+- 設計方式(例如路徑)皆以日後要打包成執行檔為前提。
 - 使用 pathlib，不要使用 os.path。
 - HTTP 使用 requests。
 - 優先修改既有程式，不要無故建立新架構。
@@ -20,6 +20,7 @@ Python 3.12 + uv 專案。
 - 不要加入新 dependency，除非必要。
 - 保持既有 function naming/style。
 - 遇到錯誤要保留足夠 exception context。
+- 有必要就一併修改測試檔。
 
 ## Style
 

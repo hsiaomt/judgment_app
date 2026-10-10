@@ -1,6 +1,6 @@
 import unittest
 
-from judgment_app.analysis.analysis_result import LawReference
+from judgment_app.analysis.models import LawReference
 
 
 class LawNameNormalizationTests(unittest.TestCase):

@@ -248,7 +248,7 @@ def download_cases(cases: list[CaseNumber], output, *, web=False, pdf=False, api
     """GUI 共用入口；背景執行緒可透過 progress 回報進度。"""
     if not any((web, pdf, api)):
         raise ValueError("請至少選擇一個下載項目")
-    from judgment_app.acquisition.download_judgments import get_token, get_judgment
+    from judgment_app.acquisition.api import get_token, get_judgment
 
     report = {"files": [], "empty": [], "errors": [], "skipped": [], "failed_cases": [], "history_files": [], "history_skipped": []}
     history = history and (web or pdf)
@@ -327,7 +327,7 @@ def download_history(jid: JudgmentId, original: CaseNumber, folder, session, see
             case = original
         if case not in report["failed_cases"]:
             report["failed_cases"].append(case)
-        message = f"歷審下載失敗 [{mode}]：{related.to_string() or jid.to_string()}（原始案號：{original.file_name}）：{exc}"
+        message = f"歷審下載失敗 [{mode}]：{related.to_string() if related is not None else jid.to_string()}（原始案號：{original.file_name}）：{exc}"
         report["errors"].append(message)
         log(message)
 
@@ -436,7 +436,10 @@ def get_judgment_web(jid: JudgmentId, *, session=None) -> dict[str, str]:
         for element in body.select("script, style"):
             element.decompose()
         html_content = body.select_one(".htmlcontent")
-        text = webpage_text(html_content if html_content is not None else body)
+        text = webpage_text(html_content) if html_content is not None else ""
+        if not text:
+            text_content = body.select_one(".text-pre")
+            text = webpage_text(text_content if text_content is not None else body)
         if not text:
             raise RuntimeError(f"裁判正文為空：{jid_str}")
         return {"jid": jid_str, "url": response.url, "text": text}
@@ -500,7 +503,7 @@ def webpage_text(element) -> str:
         match = re.search(r"white-space\s*:\s*([\w-]+)", style, re.I)
         if match:
             whitespace = match[1].lower()
-        elif node.name == "pre":
+        elif node.name == "pre" or "text-pre" in node.get("class", []):
             whitespace = "pre"
         if node.name == "br":
             parts.append("\n")

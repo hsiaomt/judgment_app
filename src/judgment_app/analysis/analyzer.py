@@ -1,6 +1,6 @@
 """Read one judgment, extract structured data with OpenAI, and save as JSON.
 
-Usage: uv run python -m judgment_app.analysis.analyze_judgment judgment.txt --output results.json
+Usage: uv run python -m judgment_app.analysis.analyzer judgment.txt --output results.json
 """
 
 import argparse
@@ -14,8 +14,8 @@ from typing import get_args, get_origin, get_type_hints
 
 import requests
 
-from judgment_app.analysis import analysis_result
-from judgment_app.analysis.analysis_result import JudgmentAnalysis
+from judgment_app.analysis import models
+from judgment_app.analysis.models import JudgmentAnalysis
 from judgment_app.case_number import CaseNumber
 from judgment_app.paths import load_settings, resolve_output_path
 
@@ -123,7 +123,7 @@ def analyze_judgment(
     schema = _schema(JudgmentAnalysis)
     load_settings()
     api_key, selected_model = _provider_settings(provider, model)
-    prompt = analysis_result.build_prompt(has_target_case=bool(target_case_number))
+    prompt = models.build_prompt(has_target_case=bool(target_case_number))
     input_data = {"jid": expected_jid, "judgment": text}
     if target_case_number:
         input_data["target_case_number"] = target_case_number
@@ -284,7 +284,7 @@ def _validate_values(result: JudgmentAnalysis) -> None:
                 raise ValueError(f"{group_location}.executed_penalty 不可超過 360 月")
         for crime_index, crime in enumerate(defendant.crimes):
             for law_index, law in enumerate(crime.laws):
-                analysis_result.validate_law(law, f"{location}.crimes[{crime_index}].laws[{law_index}]")
+                models.validate_law(law, f"{location}.crimes[{crime_index}].laws[{law_index}]")
             if type(crime.times) is not int or crime.times < 1:
                 raise ValueError(f"{location}.crimes[{crime_index}].times 必須為正整數")
             for field, value in asdict(crime).items():

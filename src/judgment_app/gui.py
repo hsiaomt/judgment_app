@@ -10,10 +10,10 @@ from tkinter import filedialog, messagebox, ttk
 
 import pandas as pd
 
-from judgment_app.analysis.analyze_judgment import analyze_folder
+from judgment_app.analysis.analyzer import analyze_folder
 from judgment_app.case_number import COURT_MAP, CaseNumber
-from judgment_app.acquisition.read_case_numbers import read_case_numbers
-from judgment_app.acquisition.read_judgment_web import download_cases
+from judgment_app.acquisition.read_case_numbers import detect_case_number_layout, read_case_numbers
+from judgment_app.acquisition.web import download_cases
 from judgment_app.paths import default_output_dir, resolve_output_path
 
 
@@ -62,8 +62,8 @@ class CaseReaderApp:
         self.sort_description = tk.StringVar(value="尚未設定排序")
         self.file = tk.StringVar()
         self.sheet = tk.StringVar()
-        self.start_row = tk.StringVar(value="4")
-        self.columns = [tk.StringVar(value=value) for value in ("AL", "AM", "AN", "AO")]
+        self.start_row = tk.StringVar()
+        self.columns = [tk.StringVar() for _ in range(4)]
         self.status = tk.StringVar(value="請先選擇 Excel 檔案。")
         self.controls = []
         self.output = tk.StringVar(value=str(default_output_dir()))
@@ -101,6 +101,7 @@ class CaseReaderApp:
         self.sheet_box = ttk.Combobox(fields, textvariable=self.sheet, state="readonly", width=24)
         self.sheet_box.grid(row=0, column=1, columnspan=3, sticky="ew", padx=(8, 20))
         self.controls.append((self.sheet_box, "readonly"))
+        self.sheet_box.bind("<<ComboboxSelected>>", lambda event: self.detect_columns())
         ttk.Label(fields, text="第一筆資料列").grid(row=0, column=4, sticky="w")
         row_box = ttk.Entry(fields, textvariable=self.start_row, width=8)
         row_box.grid(row=0, column=5, sticky="ew", padx=(8, 20))
@@ -110,7 +111,7 @@ class CaseReaderApp:
             entry = ttk.Entry(fields, textvariable=variable, width=8)
             entry.grid(row=1, column=index * 2 + 1, sticky="ew", padx=(8, 20), pady=(14, 0))
             self.controls.append((entry, "normal"))
-        ttk.Label(options, text="欄位請填 Excel 英文字母（例如 AL）；資料列從 1 起算，不包含標題列。",
+        ttk.Label(options, text="自動尋找第一筆法院及右側三欄，可手動調整；欄位填英文字母，資料列從 1 起算。",
                   wraplength=680).grid(row=2, column=0, columnspan=8, sticky="w", pady=(12, 0))
 
         self.read_button = ttk.Button(frame, text="讀取案號", command=self.read_cases, state="disabled")
@@ -227,6 +228,14 @@ class CaseReaderApp:
                 return workbook.sheet_names
 
         self.run_task("sheets", sheets)
+
+    def detect_columns(self) -> None:
+        self.start_row.set("")
+        for variable in self.columns:
+            variable.set("")
+        path, sheet = self.file.get(), self.sheet.get()
+        self.status.set("正在尋找法院欄位與起始列…")
+        self.run_task("layout", lambda: detect_case_number_layout(path, sheet_name=sheet))
 
     def read_cases(self) -> None:
         try:
@@ -452,6 +461,16 @@ class CaseReaderApp:
                 self.sheet_box.configure(values=result)
                 self.sheet.set(result[0] if result else "")
                 self.status.set("請確認欄位與起始列，再按「讀取案號」。" if result else "檔案沒有可讀取的工作表。")
+                if result:
+                    self.detect_columns()
+                    self.root.after(100, self.poll)
+                    return
+            elif kind == "layout":
+                columns, start_row = result
+                for variable, column in zip(self.columns, columns):
+                    variable.set(column)
+                self.start_row.set(str(start_row))
+                self.status.set("已自動填入欄位與起始列，可調整後按「讀取案號」。")
             else:
                 self.merge_cases(result)
             if kind != "cases" or error is not None:

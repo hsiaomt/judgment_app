@@ -1,7 +1,7 @@
 import unittest
 
-from judgment_app.analysis.analysis_result import LawReference
-from judgment_app.analysis.compare_analysis import excel_row_to_law_reference
+from judgment_app.analysis.models import LawReference
+from judgment_app.analysis.compare import excel_row_to_law_reference
 
 
 class ExcelLawReferenceTests(unittest.TestCase):

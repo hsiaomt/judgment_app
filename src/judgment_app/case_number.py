@@ -101,7 +101,7 @@ class CaseNumber:
 class JudgmentId:
     case_number: CaseNumber
     date: str
-    sequence: int
+    sequence: int | None
     category: str
 
     def __post_init__(self) -> None:
@@ -111,7 +111,7 @@ class JudgmentId:
             datetime.strptime(self.date, "%Y%m%d")
         except ValueError as exc:
             raise ValueError(f"日期不存在：{self.date!r}") from exc
-        if isinstance(self.sequence, bool) or not isinstance(self.sequence, int) or self.sequence < 0:
+        if self.sequence is not None and (isinstance(self.sequence, bool) or not isinstance(self.sequence, int) or self.sequence < 0):
             raise ValueError(f"序號必須是非負整數：{self.sequence!r}")
         if not isinstance(self.category, str) or len(self.category) != 1 or not re.fullmatch(r"[A-Z]+", self.category):
             raise ValueError(f"類別必須是單一字元：{self.category!r}")
@@ -121,25 +121,27 @@ class JudgmentId:
         if not isinstance(jid, str):
             raise ValueError(f"無法解析 JID：{jid!r}")
         parts = jid.split(",")
-        if len(parts) < 6 or not all(parts):
+        if len(parts) < 5 or not all(parts):
             raise ValueError(f"不完整的 JID：{jid!r}")
         elif len(parts) > 6:
             raise ValueError(f"JID 含有額外欄位：{jid!r}")
         if len(court := parts[0]) != 4 or not re.fullmatch(r"[A-Z]+", court):
             raise ValueError(f"法院代碼不合法：{court!r}")
-        court, year, case, number, date, sequence = parts
+        court, year, case, number, date = parts[:5]
+        sequence = parts[5] if len(parts) == 6 else None
         category = court[-1]
         try:
             if not all(re.fullmatch(r"[0-9]+", value) for value in (year, number)):
                 raise ValueError("年度、號數必須是非負整數")
             case_number = CaseNumber(court, int(year), case, int(number))
-            return cls(case_number, date, int(sequence), category)
+            return cls(case_number, date, int(sequence) if sequence is not None else None, category)
         except ValueError as exc:
             raise ValueError(f"無法解析 JID：{jid!r}：{exc}") from exc
 
     @property
     def file_name(self) -> str:
-        return f"{self.case_number.file_name}_{self.date}_{self.sequence}"
+        suffix = f"_{self.sequence}" if self.sequence is not None else ""
+        return f"{self.case_number.file_name}_{self.date}{suffix}"
 
     def to_string(self) -> str:
         parts = [
@@ -148,8 +150,9 @@ class JudgmentId:
             self.case_number.case, 
             str(self.case_number.number),
             self.date,
-            str(self.sequence),
         ]
+        if self.sequence is not None:
+            parts.append(str(self.sequence))
         return ",".join(parts)
 
 

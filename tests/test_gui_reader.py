@@ -8,9 +8,32 @@ import pandas as pd
 
 from judgment_app.case_number import CaseNumber
 from judgment_app.gui import read_case_numbers
+from judgment_app.acquisition.read_case_numbers import detect_case_number_layout
 
 
 class ReaderIntegrationTests(unittest.TestCase):
+    def test_auto_detect_columns_and_start_row(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "auto.xlsx"
+            rows = [["報表"], ["法院", "年度", "字別", "號數"],
+                    [None] * 26 + ["台北地院", 114, "訴", 219],
+                    [None] * 26 + ["TPD", 114, "訴", 219]]
+            pd.DataFrame(rows).to_excel(path, header=False, index=False)
+            self.assertEqual(detect_case_number_layout(path), (("AA", "AB", "AC", "AD"), 3))
+            self.assertEqual(read_case_numbers(path), [CaseNumber("TPD", 114, "訴", 219)])
+
+    def test_detection_errors(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "missing.xlsx"
+            pd.DataFrame([["法院", "年度", "字別", "號數"]]).to_excel(path, header=False, index=False)
+            with self.assertRaisesRegex(ValueError, "找不到"):
+                read_case_numbers(path)
+            pd.DataFrame([["台北地院", 114]]).to_excel(path, header=False, index=False)
+            with self.assertRaisesRegex(ValueError, "不足三欄"):
+                read_case_numbers(path)
+            with self.assertRaisesRegex(ValueError, "同時指定"):
+                read_case_numbers(path, "A")
+
     def test_workbook_selection_mapping_and_deduplication(self):
         with TemporaryDirectory() as directory:
             path = Path(directory) / "cases.xlsx"

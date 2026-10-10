@@ -5,9 +5,9 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import Mock, patch
 
-from judgment_app.analysis.analyze_judgment import analyze_folder
+from judgment_app.analysis.analyzer import analyze_folder
 from judgment_app.gui import CaseReaderApp
-from judgment_app.analysis.analyze_judgment import _case_folder_jobs
+from judgment_app.analysis.analyzer import _case_folder_jobs
 import json
 
 
@@ -37,7 +37,7 @@ class FolderAnalysisTests(unittest.TestCase):
             folder = Path(directory) / "臺灣高等法院115年度上訴字第1299號"
             folder.mkdir()
             (folder / "臺灣臺北地方法院114年度訴字第12號.txt").write_text("歷審全文")
-            with patch("judgment_app.analysis.analyze_judgment.analyze_judgment") as analyze:
+            with patch("judgment_app.analysis.analyzer.analyze_judgment") as analyze:
                 report = analyze_folder(directory)
             analyze.assert_not_called()
             self.assertEqual(len(report["errors"]), 1)
@@ -50,9 +50,9 @@ class FolderAnalysisTests(unittest.TestCase):
             for name in ("a.TXT", "b.json", "c.txt", "skip.pdf"):
                 (folder / name).write_text("test", encoding="utf-8")
             progress, log = Mock(), Mock()
-            with patch("judgment_app.analysis.analyze_judgment.load_settings"), patch.dict(
+            with patch("judgment_app.analysis.analyzer.load_settings"), patch.dict(
                 os.environ, {"OPENAI_API_KEY": "test"}
-            ), patch("judgment_app.analysis.analyze_judgment.analyze_judgment",
+            ), patch("judgment_app.analysis.analyzer.analyze_judgment",
                      side_effect=[None, ValueError("bad JSON"), None]) as analyze:
                 report = analyze_folder(folder, progress=progress, on_result=log)
             self.assertEqual(report["total"], 3)
@@ -69,7 +69,7 @@ class FolderAnalysisTests(unittest.TestCase):
             (folder / "old.txt.analysis.json").write_text('{"defendants": []}')
             self.assertEqual(analyze_folder(folder)["total"], 0)
             (folder / "a.txt").write_text("text")
-            with patch("judgment_app.analysis.analyze_judgment.load_settings"), patch.dict(
+            with patch("judgment_app.analysis.analyzer.load_settings"), patch.dict(
                 os.environ, {"OPENAI_API_KEY": ""}
             ), self.assertRaisesRegex(ValueError, "OPENAI_API_KEY"):
                 analyze_folder(folder)
