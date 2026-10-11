@@ -1,0 +1,613 @@
+{
+  "case_number": "臺灣高等法院114年度侵上訴字第331號",
+  "defendants": [
+    {
+      "name": "毛畯珅",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "拍攝兒童之性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 316,
+          "penalty": 42,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 2,
+          "crime_name": "拍攝兒童之性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 10,
+          "penalty": 48,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 3,
+          "crime_name": "對未滿14歲女子犯強制猥褻罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 224,
+              "article_sub": 1,
+              "article_part": null,
+              "paragraph": null,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            },
+            {
+              "law_name": "刑法",
+              "article": 222,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": 2
+            }
+          ],
+          "times": 1,
+          "penalty": 72,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 4,
+          "crime_name": "拍攝兒童之性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 76,
+          "penalty": 46,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 5,
+          "crime_name": "拍攝兒童之性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 3,
+          "penalty": 34,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 6,
+          "crime_name": "以強暴使兒童被拍攝性影像未遂罪",
+          "is_attempted": true,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 3,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 82,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 7,
+          "crime_name": "以強暴使兒童被拍攝性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 3,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 138,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": 3000000,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 8,
+          "crime_name": "以強暴使兒童被拍攝性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 3,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 126,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": 2500000,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 9,
+          "crime_name": "以強暴使兒童被拍攝性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 3,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 130,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": 2500000,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 10,
+          "crime_name": "拍攝兒童之性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 6,
+          "penalty": 24,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 11,
+          "crime_name": "拍攝兒童之性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 17,
+          "penalty": 36,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 12,
+          "crime_name": "拍攝兒童之性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 2,
+          "penalty": 30,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 13,
+          "crime_name": "以強暴使兒童被拍攝性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 3,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 61,
+          "penalty": 156,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": 2000000,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 14,
+          "crime_name": "以強暴使兒童被拍攝性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 3,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 21,
+          "penalty": 168,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": 4000000,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 15,
+          "crime_name": "以強暴使兒童被拍攝性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 3,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 23,
+          "penalty": 108,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": 2000000,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 16,
+          "crime_name": "以強暴使兒童被拍攝性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 36,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 3,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 2,
+          "penalty": 120,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": 2000000,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 17,
+          "crime_name": "成年人故意對少年犯非公務機關非法利用個人資料罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "個人資料保護法",
+              "article": 20,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            },
+            {
+              "law_name": "個人資料保護法",
+              "article": 41,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": null,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            },
+            {
+              "law_name": "兒童及少年福利與權益保障法",
+              "article": 112,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": "A",
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 34,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 18,
+          "crime_name": "無正當理由持有兒童之性影像罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 39,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 24,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            10,
+            11,
+            12,
+            17,
+            18
+          ],
+          "is_guilty": true,
+          "executed_penalty": 360,
+          "executed_penalty_to_fine": null,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": null,
+          "executed_addition_fine_to_detention": null
+        },
+        {
+          "crime_ids": [
+            7
+          ],
+          "is_guilty": true,
+          "executed_penalty": 138,
+          "executed_penalty_to_fine": null,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": 3000000,
+          "executed_addition_fine_to_detention": null
+        },
+        {
+          "crime_ids": [
+            8,
+            9
+          ],
+          "is_guilty": true,
+          "executed_penalty": 256,
+          "executed_penalty_to_fine": null,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": 5000000,
+          "executed_addition_fine_to_detention": null
+        },
+        {
+          "crime_ids": [
+            13,
+            15,
+            16
+          ],
+          "is_guilty": true,
+          "executed_penalty": 360,
+          "executed_penalty_to_fine": null,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": 172000000,
+          "executed_addition_fine_to_detention": null
+        },
+        {
+          "crime_ids": [
+            14
+          ],
+          "is_guilty": true,
+          "executed_penalty": 360,
+          "executed_penalty_to_fine": null,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": 84000000,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": "撤銷改判",
+      "probation": null,
+      "probation_law": null,
+      "confiscation": [
+        "HTC U11行動電話1支",
+        "VIVO X70 Pro 5G行動電話1支（含SIM卡2張）",
+        "Lenovo G480筆記型電腦1臺（含電源線）",
+        "SanDisk 1TB行動硬碟1臺（含數據線）",
+        "已解體針孔攝影機1組（主機板1片、鏡頭1顆、電池3顆）",
+        "已組裝針孔攝影機1組（主機板1片、鏡頭1顆、電池3顆）",
+        "SONY 128GB microSD記憶卡1張",
+        "TF Pro 1TB microSD記憶卡1張",
+        "SAMSUNG 750GB內接式硬碟1臺",
+        "TCELL 16GB隨身碟1支",
+        "bebird R1S智能可視採耳棒1支（含電源線）",
+        "SanDisk 512GB隨身碟1支"
+      ]
+    }
+  ],
+  "lower_court_case_number": "臺灣臺北地方法院113年度侵訴字第110號",
+  "is_pros_appeal": true,
+  "pros_appearing": [
+    "黃兆揚"
+  ]
+}

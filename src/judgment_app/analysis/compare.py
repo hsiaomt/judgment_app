@@ -40,17 +40,71 @@ def main() -> None:
     print(f"比對報告：{destination}")
 
 
-def compare_files(excel_path: Path, json_path: Path) -> dict:
+def load_comparison_report(path: str | Path) -> dict:
+    """讀取既有報告，驗證顯示所需欄位；不修改檔案。"""
+    source = resolve_output_path(path)
+    report = json.loads(source.read_text(encoding="utf-8-sig"))
+    if not isinstance(report, dict) or not isinstance(report.get("rows"), list) or not isinstance(report.get("errors"), list):
+        raise ValueError(f"不是有效的比對報告（需包含 rows、errors 清單）：{source}")
+    for index, row in enumerate(report["rows"], 1):
+        location = f"rows 第 {index} 筆"
+        if not isinstance(row, dict) or not isinstance(row.get("status"), str) or not row["status"]:
+            raise ValueError(f"{location} 缺少有效的 status")
+        if row.get("reason") is not None and not isinstance(row["reason"], str):
+            raise ValueError(f"{location} 的 reason 必須是字串")
+        for field, required in (("differences", ("column",)), ("uncomparable", ("column", "reason"))):
+            items = row.get(field, [])
+            if not isinstance(items, list) or any(
+                not isinstance(item, dict) or any(not isinstance(item.get(key), str) for key in required)
+                for item in items
+            ):
+                raise ValueError(f"{location} 的 {field} 格式錯誤")
+    for index, error in enumerate(report["errors"], 1):
+        if not isinstance(error, dict) or not isinstance(error.get("error"), str):
+            raise ValueError(f"errors 第 {index} 筆缺少錯誤訊息")
+    # 摘要依實際內容計算，避免外部報告的過期統計影響顯示。
+    report["summary"] = dict(Counter(row["status"] for row in report["rows"]))
+    report["summary"].update(total=len(report["rows"]), errors=len(report["errors"]))
+    return report
+
+
+def compare_to_report(excel_path: Path, json_path: Path, destination: Path, *, progress=None) -> dict:
+    """使用既有比對流程並儲存完整報告，不覆寫來源檔案。"""
+    destination = resolve_output_path(destination).resolve()
+    for source in (Path(excel_path), Path(json_path)):
+        if source.is_file() and source.resolve() == destination:
+            raise ValueError("比對報告不可覆寫來源檔案")
+    if destination.suffix.lower() != ".json":
+        raise ValueError("比對報告必須為 .json 檔案")
+    if Path(json_path).is_dir() and destination.exists():
+        data = json.loads(destination.read_text(encoding="utf-8-sig"))
+        if isinstance(data, dict) and "case_number" in data:
+            raise ValueError("比對報告不可覆寫分析 JSON")
+    report = compare_files(excel_path, json_path, progress=progress)
+    if progress:
+        progress(f"正在儲存比對報告：{destination}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    return report
+
+
+def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
     """回傳每列差異、未配對原因及未比較欄位，不修改來源資料。"""
     report = {"rows": [], "errors": [], "sheets": []}
+    if progress:
+        progress("正在讀取分析 JSON…")
     index = _load_analyses(Path(json_path), report["errors"])
     files = _files(Path(excel_path), {".xls", ".xlsx"})
     if not files:
         raise ValueError(f"找不到 Excel：{excel_path}")
-    for path in files:
+    for file_index, path in enumerate(files, 1):
+        if progress:
+            progress(f"正在比對 Excel {file_index} / {len(files)}：{path.name}")
         try:
             with pd.ExcelFile(path) as book:
                 for sheet in book.sheet_names:
+                    if progress:
+                        progress(f"正在比對 {path.name}／{sheet}")
                     table = book.parse(sheet, header=None, dtype=object)
                     header = next((i for i, row in table.iterrows()
                                    if IDENTITY_COLUMNS <= {_text(x) for x in row}), None)

@@ -1,0 +1,218 @@
+{
+  "case_number": "臺灣臺北地方法院113年度訴字第466號",
+  "defendants": [
+    {
+      "name": "王智學",
+      "is_recidivist": true,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "幫助犯圖利媒介性交罪",
+          "is_attempted": false,
+          "is_accessory": true,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 231,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": "A",
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 6,
+          "penalty_to_fine": 1000,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1
+          ],
+          "is_guilty": true,
+          "executed_penalty": 6,
+          "executed_detention": null,
+          "executed_fine": null,
+          "executed_addition_fine": null,
+          "executed_penalty_to_fine": 1000,
+          "executed_detention_to_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": null,
+      "probation": null,
+      "probation_law": null,
+      "confiscation": null
+    },
+    {
+      "name": "王俊喭",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "幫助犯圖利媒介性交罪",
+          "is_attempted": false,
+          "is_accessory": true,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 231,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": "A",
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 5,
+          "penalty_to_fine": 1000,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1
+          ],
+          "is_guilty": true,
+          "executed_penalty": 5,
+          "executed_detention": null,
+          "executed_fine": null,
+          "executed_addition_fine": null,
+          "executed_penalty_to_fine": 1000,
+          "executed_detention_to_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": null,
+      "probation": null,
+      "probation_law": null,
+      "confiscation": null
+    },
+    {
+      "name": "曾煒凱",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "意圖營利而媒介少年為有對價之性交行為罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 32,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 20,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": 20000,
+          "addition_fine_to_detention": 1000
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1
+          ],
+          "is_guilty": true,
+          "executed_penalty": 20,
+          "executed_detention": null,
+          "executed_fine": null,
+          "executed_addition_fine": 20000,
+          "executed_penalty_to_fine": null,
+          "executed_detention_to_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine_to_detention": 1000
+        }
+      ],
+      "appeal_result": null,
+      "probation": 3,
+      "probation_law": 1,
+      "confiscation": null
+    },
+    {
+      "name": "張佳宜",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "幫助意圖營利而媒介少年為有對價之性交行為罪",
+          "is_attempted": false,
+          "is_accessory": true,
+          "laws": [
+            {
+              "law_name": "兒童及少年性剝削防制條例",
+              "article": 32,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 28,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": 30000,
+          "addition_fine_to_detention": 1000
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1
+          ],
+          "is_guilty": true,
+          "executed_penalty": 28,
+          "executed_detention": null,
+          "executed_fine": null,
+          "executed_addition_fine": 30000,
+          "executed_penalty_to_fine": null,
+          "executed_detention_to_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine_to_detention": 1000
+        }
+      ],
+      "appeal_result": null,
+      "probation": null,
+      "probation_law": null,
+      "confiscation": null
+    }
+  ],
+  "lower_court_case_number": null,
+  "is_pros_appeal": null,
+  "pros_appearing": [
+    "李彥霖"
+  ]
+}

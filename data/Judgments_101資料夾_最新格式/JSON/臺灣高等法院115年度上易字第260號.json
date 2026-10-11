@@ -1,0 +1,181 @@
+{
+  "case_number": "臺灣高等法院115年度上易字第260號",
+  "defendants": [
+    {
+      "name": "盧○",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "恐嚇取財未遂罪",
+          "is_attempted": true,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 346,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 9,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 2,
+          "crime_name": "竊佔罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 320,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 3,
+          "penalty_to_fine": 1000,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 3,
+          "crime_name": "毀損他人物品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 354,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": null,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 5,
+          "penalty_to_fine": 1000,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1
+          ],
+          "is_guilty": true,
+          "executed_penalty": 9,
+          "executed_penalty_to_fine": null,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": null,
+          "executed_addition_fine_to_detention": null
+        },
+        {
+          "crime_ids": [
+            2,
+            3
+          ],
+          "is_guilty": true,
+          "executed_penalty": 8,
+          "executed_penalty_to_fine": 1000,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": "上訴駁回",
+      "probation": null,
+      "probation_law": null,
+      "confiscation": null
+    },
+    {
+      "name": "林○○",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "幫助恐嚇取財未遂罪",
+          "is_attempted": true,
+          "is_accessory": true,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 346,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 2,
+          "penalty_to_fine": 1000,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1
+          ],
+          "is_guilty": true,
+          "executed_penalty": 2,
+          "executed_penalty_to_fine": 1000,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": "上訴駁回",
+      "probation": 2,
+      "probation_law": null,
+      "confiscation": null
+    }
+  ],
+  "lower_court_case_number": "臺灣臺北地方法院112年度易字第855號",
+  "is_pros_appeal": true,
+  "pros_appearing": [
+    "葉芳秀"
+  ]
+}

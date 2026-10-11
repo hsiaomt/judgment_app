@@ -4,7 +4,7 @@
 
 - `src/judgment_app/acquisition/`：Excel 案號匯入、判決網頁搜尋與 API 下載。
 - `src/judgment_app/analysis/`：AI 分析、分析結果定義與 Excel 比對。
-- `src/judgment_app/gui.py`：桌面介面。
+- `src/judgment_app/gui/`：桌面介面；`app.py` 管理主視窗，三個 `*_page.py` 分別處理下載、分析及比對，`common.py` 共用背景工作與路徑選擇。
 - `src/judgment_app/case_number.py`、`paths.py`、`exceptions.py`：共用案號、路徑與例外。
 - `src/judgment_app/self_test.py`：打包執行檔自我檢查。
 - `tests/`：測試；`launcher.py`：PyInstaller 入口。
@@ -17,7 +17,7 @@ GUI 啟動指令與資料、`.env`、token 快取路徑維持不變。
 
 每名被告保留一筆，`execution_groups` 每組保存八個 `executed_*` 刑度與折算標準，並以 `crime_ids` 引用該被告 `crimes` 內唯一的 `crime_id`。未定應執行刑時清單為空，相關罪仍保留。同一被告內其他欄位相同且所屬分組完全一致的罪才合併 `times`，引用會同步更新。既有 JSON 不自動轉換，需重新分析產生新版格式。
 
-GUI 分析按鈕下方可選 `openai` 或 `gemini`（預設 OpenAI）。使用 Gemini 時在 `.env` 填入 `GEMINI_API_KEY`，模型由 `GEMINI_MODEL` 指定，預設 `gemini-2.5-flash`；只需設定所選服務的金鑰。兩者沿用相同格式、歷審參考與 JSON 輸出及驗證流程。
+GUI「分析判決書」分頁可選 `openai` 或 `gemini`（預設 OpenAI）。使用 Gemini 時在 `.env` 填入 `GEMINI_API_KEY`，模型由 `GEMINI_MODEL` 指定，預設 `gemini-2.5-flash`；只需設定所選服務的金鑰。兩者沿用相同格式、歷審參考與 JSON 輸出及驗證流程。
 
 ```powershell
 uv run python -m judgment_app.analysis.analyzer "判決書.json" --provider gemini
@@ -25,7 +25,7 @@ uv run python -m judgment_app.analysis.analyzer "判決書.json" --provider gemi
 
 Gemini 串接依據 [Google GenerateContent API](https://ai.google.dev/api/generate-content)，使用 JSON Schema 結構化輸出。
 
-GUI 可直接按「選擇資料夾…」下方的「分析資料夾判決書」。儲存路徑直屬的 TXT／JSON 逐份分析；子資料夾則以資料夾名稱的案號為目標（例如 `臺灣高等法院115年度上訴字第1299號`），只儲存該案號判決，其他歷審全文一併提供作為參考。同案號有多份判決會各存一筆；同路徑同檔名的 TXT／JSON 優先使用 JSON。目標比對使用 JSON JID 或下載檔名，不從正文引用的案號猜測。無法辨識資料夾案號或找不到目標時會記錄錯誤。結果存至來源檔旁的 `<原檔名>.analysis.json`；重跑會更新該結果檔，產生的分析檔會自動排除，不當成判決再次分析。
+GUI「分析判決書」分頁可選單一 TXT／JSON 或資料夾，並指定獨立的結果資料夾。來源資料夾直屬的 TXT／JSON 逐份分析；子資料夾則以資料夾名稱的案號為目標（例如 `臺灣高等法院115年度上訴字第1299號`），只儲存該案號判決，其他歷審全文一併提供作為參考。同案號有多份判決會各存一筆；同路徑同檔名的 TXT／JSON 優先使用 JSON。目標比對使用 JSON JID 或下載檔名，不從正文引用的案號猜測。無法辨識資料夾案號或找不到目標時會記錄錯誤。GUI 結果存至指定結果資料夾，保留來源相對目錄，檔名為 `<原檔名>.analysis.json`；`analyze_folder()` 未指定 `output_dir` 時仍存至來源檔旁；重跑會更新該結果檔，產生的分析檔會自動排除，不當成判決再次分析。
 
 在 `.env` 設定 `OPENAI_API_KEY`，可選填 `OPENAI_MODEL`（預設 `gpt-4o-mini`），再執行：
 
@@ -49,7 +49,19 @@ uv sync
 uv run judgment-app
 ```
 
-也可以執行 `uv run python -m judgment_app.gui`。
+也可以執行 `uv run python -m judgment_app.gui` 或 `uv run python launcher.py`。PyInstaller 仍使用 `launcher.py` 與既有 spec，無新增套件。
+
+主視窗以三個分頁獨立操作：
+
+- **下載判決書**：保留案號匯入、編輯、排序與所有下載設定；只下載原始檔，不觸發分析。
+- **分析判決書**：來源可為單檔或資料夾，輸出指定為資料夾；可選 OpenAI／Gemini，顯示進度、成功／失敗數及原因。
+- **結果比對**：Excel 與分析 JSON 各自可選檔案或資料夾；報告位置為 `.json` 檔案。完整報告保留所有列，表格僅顯示非 `equal` 列及讀取錯誤；雙擊可看完整明細。
+
+各分頁的路徑、佇列、狀態與紀錄互相獨立，背景工作以 Queue／after 更新 GUI，工作期間可切換分頁。進度條表示工作進行中，文字顯示核心函式提供的檔案／工作表進度，並非精確百分比。執行中需等待完成才可關閉主視窗。
+
+目前既有 `analyze_judgment()` 仍檢查 `result.jid`，但 `JudgmentAnalysis` 沒有此欄位，可能在模型回應後失敗。GUI 會顯示原始錯誤，不會產生替代結果；本次未修改資料模型、Prompt 或分析演算法。實際 LLM 成功流程需先另行修正這項既有不一致。
+
+下載頁操作：
 
 1. 按「瀏覽」選取 `.xls` 或 `.xlsx` 檔案。
 2. 選擇工作表。

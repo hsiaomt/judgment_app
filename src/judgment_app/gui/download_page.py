@@ -1,60 +1,21 @@
-"""Excel 案號讀取介面：python -m judgment_app.gui。"""
-
-from queue import Empty, Queue
-from threading import Thread
+"""既有案號匯入、編輯、排序與下載操作。"""
+from queue import Empty
 import tkinter as tk
-import sys
-from tkinter import font as tkfont
-from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-
 import pandas as pd
 
-from judgment_app.analysis.analyzer import analyze_folder
 from judgment_app.case_number import COURT_MAP, CaseNumber
 from judgment_app.acquisition.read_case_numbers import detect_case_number_layout, read_case_numbers
 from judgment_app.acquisition.web import download_cases
 from judgment_app.paths import default_output_dir, resolve_output_path
+from .common import TaskPage
 
 
-def main() -> None:
-    if sys.platform == "win32":
-        import ctypes
-        try:
-            # 在建立 Tk 前啟用系統 DPI 感知，字型採用系統縮放比例。
-            ctypes.windll.shcore.SetProcessDpiAwareness(1)
-        except (AttributeError, OSError):
-            ctypes.windll.user32.SetProcessDPIAware()
-    root = tk.Tk()
-    CaseReaderApp(root)
-    root.mainloop()
-
-
-class CaseReaderApp:
-    def __init__(self, root: tk.Tk) -> None:
-        self.root = root
-        root.title("裁判書搜尋與下載")
+class DownloadPage(TaskPage):
+    def __init__(self, parent):
+        super().__init__(parent)
+        root = self.root
         scale = root.winfo_fpixels("1i") / 96
-        screen_width, screen_height = root.winfo_screenwidth(), root.winfo_screenheight()
-        left, top = 0, 0
-        if sys.platform == "win32":
-            import ctypes
-            from ctypes import wintypes
-            work_area = wintypes.RECT()
-            user32 = ctypes.windll.user32
-            # SPI_GETWORKAREA 排除工作列；geometry 指定的是內容區尺寸，
-            # 因此還要扣掉標題列及上下視窗邊框。
-            if user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(work_area), 0):
-                left, top = work_area.left, work_area.top
-                border_x = user32.GetSystemMetrics(32) + user32.GetSystemMetrics(92)
-                border_y = user32.GetSystemMetrics(33) + user32.GetSystemMetrics(92)
-                screen_width = max(1, work_area.right - left - 2 * border_x)
-                screen_height = max(1, work_area.bottom - top - user32.GetSystemMetrics(4) - 2 * border_y)
-        root.geometry(f"{min(round(1000 * scale), screen_width)}x{screen_height}+{left}+{top}")
-        root.minsize(min(round(760 * scale), screen_width), min(round(480 * scale), screen_height))
-        ttk.Style(root).configure("Treeview", rowheight=tkfont.nametofont("TkDefaultFont").metrics("linespace") + round(8 * scale))
-        self.events = Queue()
-        self.busy = False
         self.cases: list[CaseNumber] = []
         self.sort_column = None
         self.sort_reverse = False
@@ -67,13 +28,12 @@ class CaseReaderApp:
         self.status = tk.StringVar(value="請先選擇 Excel 檔案。")
         self.controls = []
         self.output = tk.StringVar(value=str(default_output_dir()))
-        self.analysis_provider = tk.StringVar(value="openai")
         self.web = tk.BooleanVar(value=True)
         self.history = tk.BooleanVar(value=True)
         self.pdf = tk.BooleanVar(value=False)
         self.api = tk.BooleanVar(value=False)
 
-        frame = ttk.Frame(root, padding=18)
+        frame = ttk.Frame(self, padding=18)
         frame.pack(fill="both", expand=True)
         frame.columnconfigure(1, weight=1)
         frame.rowconfigure(5, weight=1)
@@ -181,13 +141,6 @@ class CaseReaderApp:
         self.controls.extend(((destination, "normal"), (choose, "normal")))
         self.download_button = ttk.Button(downloads, text="依畫面順序下載全部案號", command=self.start_download, state="disabled")
         self.download_button.grid(row=4, column=0, columnspan=2, sticky="w")
-        self.analyze_button = ttk.Button(downloads, text="分析資料夾判決書", command=self.start_analysis)
-        self.analyze_button.grid(row=4, column=2, pady=(4, 0))
-        self.controls.append((self.analyze_button, "normal"))
-        provider_box = ttk.Combobox(downloads, textvariable=self.analysis_provider,
-                                    values=("openai", "gemini"), state="readonly", width=12)
-        provider_box.grid(row=5, column=2, pady=(4, 0))
-        self.controls.append((provider_box, "readonly"))
         log_frame = ttk.Frame(frame)
         log_frame.grid(row=7, column=0, columnspan=3, sticky="nsew")
         log_frame.columnconfigure(0, weight=1)
@@ -211,7 +164,7 @@ class CaseReaderApp:
         root.after_idle(size_result_areas)
         for variable in (self.sheet, self.start_row, *self.columns):
             variable.trace_add("write", self.settings_changed)
-        root.after(100, self.poll)
+        self.schedule_poll()
 
     def choose_file(self) -> None:
         path = filedialog.askopenfilename(parent=self.root, title="選擇 Excel 檔案",
@@ -254,25 +207,6 @@ class CaseReaderApp:
         path = filedialog.askdirectory(parent=self.root, title="選擇判決書儲存資料夾")
         if path:
             self.output.set(path)
-
-    def start_analysis(self):
-        if self.busy:
-            return
-        value = self.output.get().strip()
-        if not value:
-            messagebox.showerror("分析設定", "請指定判決書儲存路徑。", parent=self.root)
-            return
-        output = resolve_output_path(value)
-        if not output.is_dir():
-            messagebox.showerror("分析設定", "儲存路徑不是有效的資料夾。", parent=self.root)
-            return
-        self.status.set("正在讀取資料夾內的判決書…")
-        provider = self.analysis_provider.get()
-        self.run_task("analysis", lambda: analyze_folder(
-            output, provider=provider,
-            progress=lambda text: self.events.put(("progress", text, None)),
-            on_result=lambda text: self.events.put(("result", text, None)),
-        ))
 
     def start_download(self):
         if not self.cases or self.busy:
@@ -403,18 +337,6 @@ class CaseReaderApp:
         self.read_button.configure(state="normal" if not busy and self.sheet.get() else "disabled")
         self.download_button.configure(state="normal" if not busy and self.cases else "disabled")
 
-    def run_task(self, kind, operation) -> None:
-        # 檔案與網路工作在背景執行；所有 Tk 元件由主執行緒更新。
-        self.set_busy(True)
-
-        def worker():
-            try:
-                self.events.put((kind, operation(), None))
-            except Exception as exc:
-                self.events.put((kind, None, exc))
-
-        Thread(target=worker, daemon=True).start()
-
     def poll(self) -> None:
         try:
             kind, result, error = self.events.get_nowait()
@@ -426,19 +348,12 @@ class CaseReaderApp:
                     self.status.set(result)
                 else:
                     self.append_log(result)
-                self.root.after(100, self.poll)
+                self.schedule_poll()
                 return
             if error is not None:
                 self.status.set("作業中止；已儲存的檔案仍保留。")
                 self.append_log(str(error))
                 messagebox.showerror("作業失敗", str(error), parent=self.root)
-            elif kind == "analysis":
-                summary = (f"分析完成：成功 {len(result['files'])} 份，失敗 {len(result['errors'])} 份。"
-                           if result["total"] else "資料夾內沒有 TXT／JSON 判決書。")
-                self.status.set(summary)
-                self.append_log(summary)
-                for output in result["outputs"]:
-                    self.append_log(f"JSON：{output}")
             elif kind == "download":
                 summary = f"下載完成：原始判決 {len(result['files'])} 個檔案；歷審判決 {len(result.get('history_files', []))} 個檔案；原始 {len(result['skipped'])} 個已存在並跳過；歷審 {len(result.get('history_skipped', []))} 個已存在並跳過；{len(result['empty'])} 個案號無符合結果；{len(result['errors'])} 項失敗。"
                 self.status.set(summary)
@@ -462,8 +377,11 @@ class CaseReaderApp:
                 self.sheet.set(result[0] if result else "")
                 self.status.set("請確認欄位與起始列，再按「讀取案號」。" if result else "檔案沒有可讀取的工作表。")
                 if result:
+                    # 工作表讀取已完成，先解除前一工作的鎖，讓 run_task
+                    # 能啟動欄位偵測；detect_columns 會立即重新鎖定控制項。
+                    self.set_busy(False)
                     self.detect_columns()
-                    self.root.after(100, self.poll)
+                    self.schedule_poll()
                     return
             elif kind == "layout":
                 columns, start_row = result
@@ -475,7 +393,7 @@ class CaseReaderApp:
                 self.merge_cases(result)
             if kind != "cases" or error is not None:
                 self.set_busy(False)
-        self.root.after(100, self.poll)
+        self.schedule_poll()
 
     def render_cases(self, start: int) -> None:
         end = min(start + 200, len(self.cases))
@@ -489,13 +407,3 @@ class CaseReaderApp:
         else:
             self.status.set(f"讀取完成，共 {len(self.cases)} 筆不重複案號。" if self.cases else "沒有讀到案號，請確認工作表與起始列。")
             self.set_busy(False)
-
-    def append_log(self, text):
-        self.log.configure(state="normal")
-        self.log.insert("end", text + "\n")
-        self.log.see("end")
-        self.log.configure(state="disabled")
-
-
-if __name__ == "__main__":
-    main()

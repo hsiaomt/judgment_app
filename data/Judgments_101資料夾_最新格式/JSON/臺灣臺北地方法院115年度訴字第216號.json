@@ -1,0 +1,122 @@
+{
+  "case_number": "臺灣臺北地方法院115年度訴字第216號",
+  "defendants": [
+    {
+      "name": "傅翊齊",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "意圖販賣而持有第二級毒品而混合二種以上之毒品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 5,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            },
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 9,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 3,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 16,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 2,
+          "crime_name": "轉讓第二級毒品達淨重10公克以上而混合二種以上之毒品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 8,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            },
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 9,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 3,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            },
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 8,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 6,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 3,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1,
+            2
+          ],
+          "is_guilty": true,
+          "executed_penalty": 19,
+          "executed_detention": null,
+          "executed_fine": null,
+          "executed_addition_fine": null,
+          "executed_penalty_to_fine": null,
+          "executed_detention_to_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": null,
+      "probation": null,
+      "probation_law": null,
+      "confiscation": [
+        "含氯甲基卡西酮成分之果汁包59包",
+        "含愷他命成分之白色結晶袋9袋及白色結晶塊9袋",
+        "含甲基安非他命、硝甲西泮、硝西泮及2-胺基-5-硝基二苯酮成分之綠色六角形藥錠108顆",
+        "同成分之綠色六角形藥錠12顆",
+        "如附表編號5所示之物"
+      ]
+    }
+  ],
+  "lower_court_case_number": null,
+  "is_pros_appeal": null,
+  "pros_appearing": [
+    "許佩霖"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "case_number": "最高法院115年度台上字第3829號",
+  "defendants": [
+    {
+      "name": "黃城漢",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "販賣第二級毒品而混合二種以上毒品未遂罪",
+          "is_attempted": true,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 4,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            },
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 9,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 3,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 34,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1
+          ],
+          "is_guilty": true,
+          "executed_penalty": 34,
+          "executed_penalty_to_fine": null,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": "上訴駁回",
+      "probation": null,
+      "probation_law": null,
+      "confiscation": [
+        "咖啡包35包",
+        "哈密瓜錠17粒",
+        "愷他命5包",
+        "含愷他命吸管1支",
+        "iPhone 11手機1支"
+      ]
+    }
+  ],
+  "lower_court_case_number": "臺灣高等法院115年度上訴字第1877號",
+  "is_pros_appeal": false,
+  "pros_appearing": [
+    "凃永欽"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "case_number": "臺灣臺北地方法院114年度侵訴字第111號",
+  "defendants": [
+    {
+      "name": "呂曜安",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "強制性交罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 221,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 24,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1
+          ],
+          "is_guilty": true,
+          "executed_penalty": 24,
+          "executed_detention": null,
+          "executed_fine": null,
+          "executed_addition_fine": null,
+          "executed_penalty_to_fine": null,
+          "executed_detention_to_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": null,
+      "probation": 5,
+      "probation_law": 1,
+      "confiscation": null
+    }
+  ],
+  "lower_court_case_number": null,
+  "is_pros_appeal": null,
+  "pros_appearing": [
+    "周慶華"
+  ]
+}

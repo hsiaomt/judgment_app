@@ -73,7 +73,7 @@ class CaseListTests(unittest.TestCase):
         expected = app.visible_cases()
         self.assertEqual([c.number for c in expected], [30, 2])
         app.history.set(True)
-        with patch.object(app, 'run_task', side_effect=lambda kind, operation: operation()), patch('judgment_app.gui.download_cases') as download:
+        with patch.object(app, 'run_task', side_effect=lambda kind, operation: operation()), patch('judgment_app.gui.download_page.download_cases') as download:
             app.start_download()
             self.assertEqual(download.call_args.args[0], expected)
             self.assertTrue(download.call_args.kwargs["history"])

@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from judgment_app.analysis.analyzer import analyze_folder
-from judgment_app.gui import CaseReaderApp
+from judgment_app.gui.analysis_page import AnalysisPage
 from judgment_app.analysis.analyzer import _case_folder_jobs
 import json
 
@@ -78,9 +78,11 @@ class FolderAnalysisTests(unittest.TestCase):
 
 class GuiAnalysisTests(unittest.TestCase):
     def app(self):
-        app = CaseReaderApp.__new__(CaseReaderApp)
+        app = AnalysisPage.__new__(AnalysisPage)
         app.busy = False
         app.root = Mock()
+        app.source = Mock()
+        app.source.get.return_value = ""
         app.output = Mock()
         app.analysis_provider = Mock()
         app.analysis_provider.get.return_value = "gemini"
@@ -89,16 +91,18 @@ class GuiAnalysisTests(unittest.TestCase):
         app.run_task = Mock()
         app.append_log = Mock()
         app.set_busy = Mock()
+        app.schedule_poll = Mock()
         return app
 
     def test_start_uses_background_task_and_queue(self):
         app = self.app()
         with TemporaryDirectory() as directory:
+            app.source.get.return_value = directory
             app.output.get.return_value = directory
             app.start_analysis()
             kind, operation = app.run_task.call_args.args
             self.assertEqual(kind, "analysis")
-            with patch("judgment_app.gui.analyze_folder") as analyze:
+            with patch("judgment_app.gui.analysis_page.analyze_source") as analyze:
                 operation()
                 self.assertEqual(analyze.call_args.args[0], Path(directory))
                 self.assertEqual(analyze.call_args.kwargs["provider"], "gemini")
@@ -114,7 +118,7 @@ class GuiAnalysisTests(unittest.TestCase):
         app.run_task.assert_not_called()
         app.busy = False
         app.output.get.return_value = ""
-        with patch("judgment_app.gui.messagebox.showerror") as error:
+        with patch("judgment_app.gui.analysis_page.messagebox.showerror") as error:
             app.start_analysis()
             error.assert_called_once()
         app.run_task.assert_not_called()

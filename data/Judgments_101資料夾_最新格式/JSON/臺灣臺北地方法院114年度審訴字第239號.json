@@ -1,0 +1,62 @@
+{
+  "case_number": "臺灣臺北地方法院114年度審訴字第239號",
+  "defendants": [
+    {
+      "name": "吳宇騫",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "三人以上共同詐欺取財罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 339,
+              "article_sub": 4,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": 2
+            }
+          ],
+          "times": 1,
+          "penalty": 11,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1
+          ],
+          "is_guilty": true,
+          "executed_penalty": 11,
+          "executed_detention": null,
+          "executed_fine": null,
+          "executed_addition_fine": null,
+          "executed_penalty_to_fine": null,
+          "executed_detention_to_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": null,
+      "probation": null,
+      "probation_law": null,
+      "confiscation": null
+    }
+  ],
+  "lower_court_case_number": null,
+  "is_pros_appeal": null,
+  "pros_appearing": [
+    "黃惠欣"
+  ]
+}

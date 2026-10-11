@@ -1,0 +1,67 @@
+{
+  "case_number": "臺灣臺北地方法院114年度訴字第1567號",
+  "defendants": [
+    {
+      "name": "邱鈞賢",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "販賣第三級毒品未遂罪",
+          "is_attempted": true,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 4,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 3,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 22,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1
+          ],
+          "is_guilty": true,
+          "executed_penalty": 22,
+          "executed_detention": null,
+          "executed_fine": null,
+          "executed_addition_fine": null,
+          "executed_penalty_to_fine": null,
+          "executed_detention_to_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": null,
+      "probation": null,
+      "probation_law": null,
+      "confiscation": [
+        "愷他命12包",
+        "黑色包裝毒品咖啡包13包",
+        "LOEWE字樣毒品咖啡包19包",
+        "iPhone XR手機1支"
+      ]
+    }
+  ],
+  "lower_court_case_number": null,
+  "is_pros_appeal": null,
+  "pros_appearing": [
+    "徐名駒"
+  ]
+}

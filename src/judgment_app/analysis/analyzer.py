@@ -37,11 +37,40 @@ def main() -> None:
     print(f"已儲存：{_output_path(args.input, args.output)}")
 
 
-def analyze_folder(folder: str | Path, *, provider: str = "openai", progress=None, on_result=None) -> dict:
+def analyze_source(source: str | Path, output_dir: str | Path, *, provider="openai", progress=None, on_result=None) -> dict:
+    """分析單檔或既有批次來源，回傳相同的批次摘要。"""
+    source = resolve_output_path(source).resolve()
+    output_dir = resolve_output_path(output_dir).resolve()
+    if source.is_dir():
+        return analyze_folder(source, output_dir=output_dir, provider=provider, progress=progress, on_result=on_result)
+    if not source.is_file():
+        raise ValueError(f"分析來源不存在：{source}")
+    destination = output_dir / (source.name + ".analysis.json")
+    report = {"total": 1, "files": [], "errors": [], "outputs": []}
+    if progress:
+        progress(f"正在分析 1 / 1：{source.name}")
+    try:
+        analyze_judgment(source, destination, provider=provider)
+    except Exception as exc:
+        detail = f"分析失敗 [{source}]：{type(exc).__name__}: {exc}"
+        report["errors"].append(detail)
+        if on_result:
+            on_result(detail)
+    else:
+        report["files"].append(str(source))
+        report["outputs"].append(str(destination))
+        if on_result:
+            on_result(f"分析完成並已儲存：{destination}")
+    return report
+
+
+def analyze_folder(folder: str | Path, *, provider: str = "openai", progress=None, on_result=None,
+                   output_dir: str | Path | None = None) -> dict:
     """Use case folders as target cases; other judgments are context only."""
     folder = resolve_output_path(folder).resolve()
     if not folder.is_dir():
         raise ValueError(f"不是有效的資料夾：{folder}")
+    output_root = resolve_output_path(output_dir).resolve() if output_dir is not None else None
     report = {"total": 0, "files": [], "errors": [], "outputs": []}
     jobs = []
 
@@ -52,6 +81,8 @@ def analyze_folder(folder: str | Path, *, provider: str = "openai", progress=Non
             on_result(detail)
 
     for entry in sorted(folder.iterdir()):
+        if output_root is not None and entry.resolve() == output_root and output_root != folder:
+            continue
         if entry.is_file() and entry.suffix.lower() in {".txt", ".json"} and not entry.name.endswith(".analysis.json"):
             jobs.append((entry, None, []))
         elif entry.is_dir():
@@ -70,15 +101,17 @@ def analyze_folder(folder: str | Path, *, provider: str = "openai", progress=Non
             if progress:
                 progress(f"正在分析 {index} / {len(jobs)}：{label}")
             try:
-                analyze_judgment(source, session=session,
+                destination = (output_root / source.relative_to(folder)).with_name(source.name + ".analysis.json") if output_root else _output_path(source, None)
+                output_options = {"output_path": destination} if output_root else {}
+                analyze_judgment(source, **output_options, session=session,
                                  target_case_number=target_case, reference_documents=references, provider=provider)
             except Exception as exc:
                 failed(label, exc)
             else:
                 report["files"].append(str(source))
-                report["outputs"].append(str(_output_path(source, None)))
+                report["outputs"].append(str(destination))
                 if on_result:
-                    on_result(f"分析完成並已儲存：{_output_path(source, None)}")
+                    on_result(f"分析完成並已儲存：{destination}")
     return report
 
 

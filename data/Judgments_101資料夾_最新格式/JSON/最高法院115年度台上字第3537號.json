@@ -1,0 +1,148 @@
+{
+  "case_number": "最高法院115年度台上字第3537號",
+  "defendants": [
+    {
+      "name": "林國勛",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "三人以上共同詐欺取財罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 339,
+              "article_sub": 4,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": 2
+            }
+          ],
+          "times": 1,
+          "penalty": 14,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 2,
+          "crime_name": "三人以上共同詐欺取財罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 339,
+              "article_sub": 4,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": 2
+            }
+          ],
+          "times": 3,
+          "penalty": 13,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 3,
+          "crime_name": "三人以上共同詐欺取財罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 339,
+              "article_sub": 4,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": 2
+            }
+          ],
+          "times": 1,
+          "penalty": 12,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 4,
+          "crime_name": "三人以上共同詐欺取財罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "刑法",
+              "article": 339,
+              "article_sub": 4,
+              "article_part": null,
+              "paragraph": 1,
+              "paragraph_part": null,
+              "paragraph_sub": 2
+            }
+          ],
+          "times": 1,
+          "penalty": 8,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "is_guilty": true,
+          "executed_penalty": 30,
+          "executed_penalty_to_fine": null,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": "上訴駁回",
+      "probation": null,
+      "probation_law": null,
+      "confiscation": [
+        "金色iPhone 6行動電話1支",
+        "OK忠訓國際王耀信識別證1張",
+        "合約書7張",
+        "新臺幣10000元"
+      ]
+    }
+  ],
+  "lower_court_case_number": "臺灣高等法院115年度上訴字第66號",
+  "is_pros_appeal": false,
+  "pros_appearing": [
+    "林逸群"
+  ]
+}

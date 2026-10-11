@@ -1,0 +1,355 @@
+{
+  "case_number": "臺灣高等法院115年度上訴字第1576號",
+  "defendants": [
+    {
+      "name": "蔣銘瑋",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "販賣第二級毒品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 4,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 66,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 2,
+          "crime_name": "販賣第二級毒品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 4,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 74,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 3,
+          "crime_name": "販賣第二級毒品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 4,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 82,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1,
+            2,
+            3
+          ],
+          "is_guilty": true,
+          "executed_penalty": 94,
+          "executed_penalty_to_fine": null,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": "部分撤銷改判，其餘上訴駁回",
+      "probation": null,
+      "probation_law": null,
+      "confiscation": null
+    },
+    {
+      "name": "魏巳翃",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "販賣第二級毒品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 4,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 50,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 2,
+          "crime_name": "販賣第二級毒品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 4,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 60,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1,
+            2
+          ],
+          "is_guilty": true,
+          "executed_penalty": 82,
+          "executed_penalty_to_fine": null,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": "上訴駁回；與撤銷改判部分合併定應執行刑",
+      "probation": null,
+      "probation_law": null,
+      "confiscation": null
+    },
+    {
+      "name": "陳星均",
+      "is_recidivist": false,
+      "crimes": [
+        {
+          "crime_id": 1,
+          "crime_name": "販賣第二級毒品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 4,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 14,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 2,
+          "crime_name": "販賣第二級毒品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 4,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 11,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 3,
+          "crime_name": "販賣第二級毒品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 4,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 26,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 4,
+          "crime_name": "販賣第二級毒品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 4,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 36,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        },
+        {
+          "crime_id": 5,
+          "crime_name": "販賣第二級毒品罪",
+          "is_attempted": false,
+          "is_accessory": false,
+          "laws": [
+            {
+              "law_name": "毒品危害防制條例",
+              "article": 4,
+              "article_sub": null,
+              "article_part": null,
+              "paragraph": 2,
+              "paragraph_part": null,
+              "paragraph_sub": null
+            }
+          ],
+          "times": 1,
+          "penalty": 18,
+          "penalty_to_fine": null,
+          "detention": null,
+          "detention_to_fine": null,
+          "fine": null,
+          "fine_to_detention": null,
+          "addition_fine": null,
+          "addition_fine_to_detention": null
+        }
+      ],
+      "execution_groups": [
+        {
+          "crime_ids": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "is_guilty": true,
+          "executed_penalty": 60,
+          "executed_penalty_to_fine": null,
+          "executed_detention": null,
+          "executed_detention_to_fine": null,
+          "executed_fine": null,
+          "executed_fine_to_detention": null,
+          "executed_addition_fine": null,
+          "executed_addition_fine_to_detention": null
+        }
+      ],
+      "appeal_result": "撤銷改判",
+      "probation": null,
+      "probation_law": null,
+      "confiscation": null
+    }
+  ],
+  "lower_court_case_number": "臺灣臺北地方法院114年度重訴字第6、22號",
+  "is_pros_appeal": false,
+  "pros_appearing": [
+    "許佩霖"
+  ]
+}
