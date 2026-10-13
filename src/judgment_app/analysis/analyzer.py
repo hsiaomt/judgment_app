@@ -15,7 +15,7 @@ from typing import get_args, get_origin, get_type_hints
 import requests
 
 from judgment_app.analysis import models
-from judgment_app.analysis.models import JudgmentAnalysis
+from judgment_app.analysis.models import JudgmentAnalysis, LawReference
 from judgment_app.case_number import CaseNumber
 from judgment_app.paths import load_settings, resolve_output_path
 
@@ -317,12 +317,22 @@ def _validate_values(result: JudgmentAnalysis) -> None:
                 raise ValueError(f"{group_location}.executed_penalty 不可超過 360 月")
         for crime_index, crime in enumerate(defendant.crimes):
             for law_index, law in enumerate(crime.laws):
-                models.validate_law(law, f"{location}.crimes[{crime_index}].laws[{law_index}]")
+                _validate_law(law, f"{location}.crimes[{crime_index}].laws[{law_index}]")
             if type(crime.times) is not int or crime.times < 1:
                 raise ValueError(f"{location}.crimes[{crime_index}].times 必須為正整數")
             for field, value in asdict(crime).items():
                 if type(value) is int and value < 0:
                     raise ValueError(f"{location}.crimes[{crime_index}].{field} 不可為負數")
+
+def _validate_law(law: LawReference, location: str) -> None:
+    if not law.law_name.strip():
+        raise ValueError(f"{location}.law_name 不可空白")
+    for name in ("article", "article_sub", "paragraph", "paragraph_sub"):
+        value = getattr(law, name)
+        if value is not None and (type(value) is not int or value < 1):
+            raise ValueError(f"{location}.{name} 必須為正整數")
+    if law.paragraph_part not in (None, "A", "B", "C"):
+        raise ValueError(f"{location}.part 必須為 A、B、C 或 null")
 
 
 def _case_folder_jobs(folder: Path) -> list:
