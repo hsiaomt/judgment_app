@@ -93,7 +93,7 @@ class JudgmentAnalysis:
 
 @dataclass
 class DefendantAnalysis:
-    name: str = field(metadata={"description": "被告姓名"})
+    name: str = field(metadata={"description": "被告姓名，若為英文或外籍姓名請保留原文"})
     is_recidivist: bool = field(metadata={"description": "是否累犯"})
     is_pros_appeal: bool | None = described("二審上訴人是否有檢察署；一審則為null")
     appeal_result: str | None = described("上訴結果；一審為null")

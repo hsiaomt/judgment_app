@@ -27,11 +27,11 @@ class CompareAnalysisTests(unittest.TestCase):
                     '未遂': None, '幫助': None, '累犯': None, '裁判情形': '科刑'}
         self.data = {'case_number': '臺灣高等法院115年度上訴字第1299號', 'defendants': [
             {'name': '甲', 'is_recidivist': False, 'crimes': [
-                {'crime_id': 1, 'crime_name': '詐欺', 'times': 1, 'penalty': 50, 'detention': None, 'fine': None,
-                 'addition_fine': None, 'is_attempted': False, 'is_accessory': False,
-                 'laws': [{'law_name': '刑法', 'article': 339, 'article_sub': None,
+                {'crime_id': 1, 'crime_jsst': '科刑', 'crime_name': '詐欺', 'times': 1, 'penalty': 50, 'detention': None, 'fine': None,
+                 'addition_fine': None,
+                 'laws': [{'is_attempted': False, 'is_accessory': False, 'law_name': '刑法', 'article': 339, 'article_sub': None,
                            'paragraph': 1, 'paragraph_part': None, 'paragraph_sub': None}]}],
-             'execution_groups': [{'crime_ids': [1], 'is_guilty': True, 'executed_penalty': 60}]}]}
+             'execution_groups': [{'crime_ids': [1], 'executed_jsst': '科刑', 'executed_penalty': 60}]}]}
 
     def run_report(self):
         self.source.write_text(json.dumps(self.data), encoding='utf-8')
@@ -61,7 +61,7 @@ class CompareAnalysisTests(unittest.TestCase):
         self.assertEqual(errors, [])
 
     def test_missing_required_json_field_is_reported_at_load(self):
-        del self.data['defendants'][0]['crimes'][0]['is_attempted']
+        del self.data['defendants'][0]['crimes'][0]['laws'][0]['is_attempted']
         self.run_report()
         report = compare_files(self.excel, self.root)
         self.assertEqual(report['rows'][0]['status'], 'unmatched')
@@ -149,7 +149,7 @@ class CompareAnalysisTests(unittest.TestCase):
     def test_multiple_documents_keep_all_differences_with_sources(self):
         self.run_report()
         other = deepcopy(self.data)
-        other['defendants'][0]['crimes'][0]['is_attempted'] = True
+        other['defendants'][0]['is_recidivist'] = True
         second = self.root / '另一份.analysis.json'
         second.write_text(json.dumps(other))
         result = self.run_report()
@@ -249,9 +249,9 @@ class CompareAnalysisTests(unittest.TestCase):
         other['penalty'] = 60
         defendant['crimes'].append(other)
         defendant['execution_groups'] = [
-            {'crime_ids': [1], 'is_guilty': True, 'executed_penalty': 60,
+            {'crime_ids': [1], 'executed_jsst': '科刑', 'executed_penalty': 60,
              'executed_detention': None, 'executed_fine': None, 'executed_addition_fine': None},
-            {'crime_ids': [2], 'is_guilty': True, 'executed_penalty': 50,
+            {'crime_ids': [2], 'executed_jsst': '科刑', 'executed_penalty': 50,
              'executed_detention': None, 'executed_fine': None, 'executed_addition_fine': None},
         ]
         result = self.run_report()
@@ -276,8 +276,8 @@ class CompareAnalysisTests(unittest.TestCase):
 
     def test_no_guilty_group_is_unmatched(self):
         defendant = self.data['defendants'][0]
-        for groups in ([], [{'crime_ids': [1], 'is_guilty': False}],
-                       [{'crime_ids': [1], 'is_guilty': None}]):
+        for groups in ([], [{'crime_ids': [1], 'executed_jsst': '無罪'}],
+                       [{'crime_ids': [1], 'executed_jsst': '免訴'}]):
             with self.subTest(groups=groups):
                 defendant['execution_groups'] = groups
                 result = self.run_report()
@@ -290,8 +290,8 @@ class CompareAnalysisTests(unittest.TestCase):
         other['crime_id'] = 2
         defendant['crimes'].append(other)
         defendant['execution_groups'] = [
-            {'crime_ids': [1], 'is_guilty': False},
-            {'crime_ids': [2], 'is_guilty': True},
+            {'crime_ids': [1], 'executed_jsst': '無罪'},
+            {'crime_ids': [2], 'executed_jsst': '科刑'},
         ]
         result = self.run_report()
         self.assertEqual(result['status'], 'equal')
@@ -304,13 +304,13 @@ class CompareAnalysisTests(unittest.TestCase):
         self.data['defendants'][0]['execution_groups'][0]['crime_ids'] = [2]
         self.assertEqual(self.run_report()['status'], 'unmatched')
 
-    def test_missing_json_field_is_incomplete(self):
+    def test_null_recidivist_is_rejected_at_load(self):
         self.data['defendants'][0]['is_recidivist'] = None
-        self.assertEqual(self.run_report()['status'], 'incomplete')
+        self.assertEqual(self.run_report()['status'], 'unmatched')
 
     def test_absent_excel_recidivist_column_is_skipped(self):
         del self.row['累犯']
-        self.data['defendants'][0]['is_recidivist'] = None
+        self.data['defendants'][0]['is_recidivist'] = True
         self.assertEqual(self.run_report()['status'], 'equal')
 
     def test_addition_fine_is_not_compared(self):
@@ -338,47 +338,66 @@ class CompareAnalysisTests(unittest.TestCase):
         self.assertEqual(result['status'], 'different')
         self.assertEqual(result['differences'][0]['field'], 'is_recidivist')
 
-    def test_attempt_and_accessory_are_differences_not_location_conditions(self):
-        crime = self.data['defendants'][0]['crimes'][0]
-        crime['is_attempted'] = True
-        crime['is_accessory'] = True
-        other = deepcopy(crime)
-        other.update(crime_id=2, is_attempted=False, is_accessory=False)
-        self.data['defendants'][0]['crimes'].append(other)
-        self.data['defendants'][0]['execution_groups'][0]['crime_ids'].append(2)
-        result = self.run_report()
-        self.assertEqual(result['status'], 'different')
-        self.assertEqual(result['candidate_crime_ids'], [1, 2])
-        self.assertCountEqual([d['column'] for d in result['differences']], ['幫助', '未遂'])
+    def test_attempt_and_accessory_are_location_conditions(self):
+        law = self.data['defendants'][0]['crimes'][0]['laws'][0]
+        for column, field in (('未遂', 'is_attempted'), ('幫助', 'is_accessory')):
+            with self.subTest(field=field):
+                law[field] = True
+                self.assertEqual(self.run_report()['status'], 'unmatched')
+                self.row[column] = '是'
+                self.assertEqual(self.run_report()['status'], 'equal')
+                law[field] = False
+                self.row[column] = None
 
-    def test_all_candidates_report_differences_and_missing_fields(self):
+    def test_flags_select_matching_law_within_same_crime(self):
+        crime = self.data['defendants'][0]['crimes'][0]
+        other = deepcopy(crime['laws'][0])
+        other['is_attempted'] = True
+        crime['laws'].append(other)
+        self.row['未遂'] = '是'
+        self.assertEqual(self.run_report()['status'], 'equal')
+        self.row['幫助'] = '是'
+        self.assertEqual(self.run_report()['status'], 'unmatched')
+
+    def test_flags_select_matching_crime(self):
         defendant = self.data['defendants'][0]
-        first = defendant['crimes'][0]
-        second = deepcopy(first)
-        second.update(crime_id=2, is_attempted=True, is_accessory=True)
-        third = deepcopy(second)
-        third['crime_id'] = 3
-        third['is_accessory'] = None
-        third['laws'] *= 2
-        defendant['crimes'].extend([second, third])
-        defendant['execution_groups'][0]['crime_ids'] = [1, 2, 3]
-        self.row['累犯'] = '是'
+        other = deepcopy(defendant['crimes'][0])
+        other['crime_id'] = 2
+        other['laws'][0]['is_accessory'] = True
+        defendant['crimes'].append(other)
+        defendant['execution_groups'][0]['crime_ids'].append(2)
+        self.row['幫助'] = '是'
         result = self.run_report()
-        self.assertEqual(result['status'], 'different')
-        self.assertEqual(result['candidate_crime_ids'], [1, 2, 3])
-        self.assertCountEqual([d['field'] for d in result['differences']], [
-            'crimes[crime_id=2].is_attempted', 'crimes[crime_id=2].is_accessory',
-            'crimes[crime_id=3].is_attempted', 'is_recidivist'])
-        self.assertEqual([d['field'] for d in result['uncomparable']],
-                         ['crimes[crime_id=3].is_accessory'])
+        self.assertEqual(result['status'], 'equal')
+        self.assertEqual(result['candidate_crime_ids'], [2])
 
-    def test_missing_attempt_and_accessory_are_incomplete(self):
-        crime = self.data['defendants'][0]['crimes'][0]
-        crime['is_attempted'] = None
-        crime['is_accessory'] = None
-        result = self.run_report()
-        self.assertEqual(result['status'], 'incomplete')
-        self.assertEqual(len(result['uncomparable']), 2)
+    def test_null_law_flags_are_rejected_at_load(self):
+        law = self.data['defendants'][0]['crimes'][0]['laws'][0]
+        for field in ('is_attempted', 'is_accessory'):
+            with self.subTest(field=field):
+                law[field] = None
+                self.run_report()
+                report = compare_files(self.excel, self.root)
+                self.assertIn(field, report['errors'][0]['error'])
+                law[field] = False
+
+    def test_missing_excel_flags_default_to_false(self):
+        del self.row['未遂']
+        del self.row['幫助']
+        self.assertEqual(self.run_report()['status'], 'equal')
+
+    def test_null_laws_have_no_candidate(self):
+        self.data['defendants'][0]['crimes'][0]['laws'] = None
+        self.assertEqual(self.run_report()['status'], 'unmatched')
+
+    def test_exempt_sentence_is_guilty(self):
+        defendant = self.data['defendants'][0]
+        defendant['execution_groups'][0]['executed_jsst'] = '免刑'
+        defendant['execution_groups'][0]['executed_penalty'] = None
+        defendant['crimes'][0]['crime_jsst'] = '免刑'
+        defendant['crimes'][0]['penalty'] = None
+        self.row['徒刑(YYMM)'] = 0
+        self.assertEqual(self.run_report()['status'], 'equal')
 
     def test_invalid_month_is_reported(self):
         self.row['徒刑(YYMM)'] = 499

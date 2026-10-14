@@ -14,15 +14,15 @@ from judgment_app.paths import resolve_output_path
 
 # 同名欄位以第一欄為準：Excel 後面的拘役等欄位屬法定刑上下限。
 FIELD_MAP = {
-    "徒刑(YYMM)": "penalty", "拘役": "detention", "罰金": "fine",
-    "未遂": "is_attempted", "幫助": "is_accessory",
+    "裁判情形": "crime_jsst", "徒刑(YYMM)": "penalty", "拘役": "detention", "罰金": "fine",
     "累犯": "is_recidivist", "案由": "law_name", 
     "條": "article", "之": "article_sub", "條段": "article_part",
     "項": "paragraph", "項段": "paragraph_part", "款": "paragraph_sub",
+    "未遂": "is_attempted", "幫助": "is_accessory",
 }
 IDENTITY_COLUMNS = {"裁判機關", "裁判年度", "裁判冠字", "裁判號數", "姓名"}
-LAW_FIELDS = {"law_name", "article", "article_sub", "article_part", "paragraph", "paragraph_part", "paragraph_sub"}
-PENALTIES = {"penalty", "detention", "fine"}
+LAW_FIELDS = {"law_name", "article", "article_sub", "article_part", "paragraph", "paragraph_part", "paragraph_sub", "is_attempted", "is_accessory"}
+PENALTIES = {"crime_jsst", "penalty", "detention", "fine"}
 
 
 
@@ -152,7 +152,7 @@ def _compare_row(row: dict, index: dict[CaseNumber, list[tuple[Path, JudgmentAna
             defendant = defendants[0]
 
             # 只比對有罪的 group，若無則視為無法配對。
-            guilty_groups = [g for g in defendant.execution_groups if g.is_guilty is True]
+            guilty_groups = [g for g in defendant.execution_groups if g.executed_jsst in {"科刑", "免刑"}]
             if not guilty_groups:
                 results.append({**context, "status": "unmatched", "reason": "找不到有罪的 group",
                         "candidate_crime_ids": []})
@@ -162,9 +162,13 @@ def _compare_row(row: dict, index: dict[CaseNumber, list[tuple[Path, JudgmentAna
             # 每列只轉換一次；所有候選均依法條及各罪刑度定位。
             values = {field: _excel_col_to_val(column, row[column])
                       for column, field in FIELD_MAP.items() if column in row}
-            excel_law = LawReference(**{field: values[field] for field in LAW_FIELDS if field in values})
+            excel_law = LawReference(**{
+                **{field: values[field] for field in LAW_FIELDS if field in values},
+                "is_attempted": values.get("is_attempted", False),
+                "is_accessory": values.get("is_accessory", False),
+            })
             candidates = [(crime, law) for crime in defendant.crimes
-                          if crime.crime_id in guilty_crime_ids for law in crime.laws
+                          if crime.crime_id in guilty_crime_ids for law in (crime.laws or [])
                           if _matches_candidate(values, crime, excel_law, law)]
             if not candidates:
                 results.append({**context, "status": "unmatched",
@@ -172,22 +176,14 @@ def _compare_row(row: dict, index: dict[CaseNumber, list[tuple[Path, JudgmentAna
                 continue
             # 多個符合候選也視為定位成功，保留全部候選 ID；累犯由被告資料比較。
             context["candidate_crime_ids"] = list(dict.fromkeys(c.crime_id for c, _ in candidates))
-            # 同一罪可能有多筆符合法條，罪名欄位只比較一次。
-            candidate_crimes = {c.crime_id: c for c, _ in candidates}
-
             differences, uncomparable = [], []
-            for column, field in (("未遂", "is_attempted"), ("幫助", "is_accessory"), ("累犯", "is_recidivist")):
-                if field not in values:
-                    continue
-                expected = values[field]
-                owners = [defendant] if field == "is_recidivist" else candidate_crimes.values()
-                for owner in owners:
-                    location = field if field == "is_recidivist" else f"crimes[crime_id={owner.crime_id}].{field}"
-                    if getattr(owner, field) is None:
-                        uncomparable.append({"column": column, "field": location, "reason": "JSON 欄位為 null"})
-                    elif expected != getattr(owner, field):
-                        differences.append({"column": column, "field": location, "excel_raw": _text(row[column]),
-                                            "excel_value": expected, "json_value": getattr(owner, field)})
+            if "is_recidivist" in values and values["is_recidivist"] != defendant.is_recidivist:
+                differences.append({
+                    "column": "累犯", "field": "is_recidivist",
+                    "excel_raw": _text(row["累犯"]),
+                    "excel_value": values["is_recidivist"],
+                    "json_value": defendant.is_recidivist,
+                })
             results.append({**context, "status": "different" if differences else "incomplete" if uncomparable else "equal",
                     "differences": differences, "uncomparable": uncomparable})
         except (ValueError, TypeError, KeyError) as exc:
@@ -248,7 +244,7 @@ def _excel_col_to_val(column: str, value):
         raise ValueError(f"{column}布林值無法辨識：{text}")
     if not text or text.lower() == "x":
         return None
-    if column == "案由":
+    if column in {"案由", "裁判情形"}:
         return text
     if column in {"條段", "項段"}:
         return text.upper()

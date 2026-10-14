@@ -50,6 +50,15 @@ COURT_MAP = {
     "KSY": "臺灣高雄少年及家事法院",
 }
 
+SPECIAL_COURT_ALIASES = {
+    "智慧財產及商業法院": {
+        "智慧法院",
+        "智慧財產法院",
+        "智財法院",
+        "智商法院",
+    },
+}
+
 
 @dataclass(frozen=True)
 class CaseNumber:
@@ -171,6 +180,8 @@ def normalize_court(value: str) -> str:
         aliases = {name, name.replace("地方法院", "地院").replace("高等法院", "高院")}
         if name.startswith(("臺灣", "福建")) and name.endswith("地方法院"):
             aliases.update({name[2:], name[2:].replace("地方法院", "地院")})
+        # 加入特殊法院別名
+        aliases.update(SPECIAL_COURT_ALIASES.get(name, set()))
         if normalized in {_normalize_court_name(alias) for alias in aliases}:
             return code
     raise ValueError(f"法院不在 COURT_MAP 中：{value}")
