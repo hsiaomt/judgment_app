@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import pandas as pd
 
-from judgment_app.case_number import COURT_MAP, CaseNumber
+from judgment_app.case_number import COURT_MAP, SPECIAL_COURT_ALIASES, CaseNumber
 from judgment_app.acquisition.read_case_numbers import detect_case_number_layout, read_case_numbers
 from judgment_app.acquisition.web import download_cases
 from judgment_app.paths import default_output_dir, resolve_output_path
@@ -84,14 +84,26 @@ class DownloadPage(TaskPage):
         for column in (1, 3, 5, 7):
             manual.columnconfigure(column, weight=1)
         self.manual_courts = {f"{name} ({code})": code for code, name in COURT_MAP.items() if code}
+        self.manual_court_keywords = {
+            label: (label, code, COURT_MAP[code],
+                    COURT_MAP[code].replace("地方法院", "地院").replace("高等法院", "高院"),
+                    *SPECIAL_COURT_ALIASES.get(COURT_MAP[code], ()),
+                    *(("北院",) if code == "TPD" else ()))
+            for label, code in self.manual_courts.items()
+        }
         self.manual_court = tk.StringVar(value=next(label for label, code in self.manual_courts.items() if code == "TPD"))
         self.manual_year = tk.StringVar()
         self.manual_case = tk.StringVar()
         self.manual_number = tk.StringVar()
-        court_box = ttk.Combobox(manual, textvariable=self.manual_court, values=list(self.manual_courts), state="readonly", width=30)
+        self.court_box = ttk.Combobox(manual, textvariable=self.manual_court, values=list(self.manual_courts),
+                                      state="normal", width=30, postcommand=self.filter_manual_courts)
         ttk.Label(manual, text="法院").grid(row=0, column=0)
-        court_box.grid(row=0, column=1, padx=4, sticky="ew")
-        self.controls.append((court_box, "readonly"))
+        self.court_box.grid(row=0, column=1, padx=4, sticky="ew")
+        self.controls.append((self.court_box, "normal"))
+        self.manual_court.trace_add("write", self.filter_manual_courts)
+        self.court_box.bind("<Return>", self.confirm_manual_court)
+        self.court_box.bind("<KP_Enter>", self.confirm_manual_court)
+        self.court_box.bind("<Control-a>", self.select_court_text)
         for index, (label, variable) in enumerate((("年度", self.manual_year), ("字別", self.manual_case), ("號數", self.manual_number))):
             ttk.Label(manual, text=label).grid(row=0, column=2 + index * 2)
             entry = ttk.Entry(manual, textvariable=variable, width=8)
@@ -103,7 +115,7 @@ class DownloadPage(TaskPage):
             button = ttk.Button(actions, text=label, command=command)
             button.grid(row=0, column=index, sticky="w", padx=(0, 8))
             self.controls.append((button, "normal"))
-        ttk.Label(manual, text="Ctrl／Shift 可多選；刪除僅移除清單案號。").grid(row=2, column=0, columnspan=8, sticky="w")
+        ttk.Label(manual, text="法院可輸入名稱、簡稱或代碼，按 ↓ 選取或 Enter 確認；Ctrl／Shift 可多選案號。").grid(row=2, column=0, columnspan=8, sticky="w")
         ttk.Label(manual, textvariable=self.sort_description, wraplength=850).grid(row=3, column=0, columnspan=8, sticky="w")
         table = ttk.Frame(frame)
         table.grid(row=5, column=0, columnspan=3, sticky="nsew")
@@ -136,7 +148,7 @@ class DownloadPage(TaskPage):
         ttk.Label(downloads, text="儲存路徑").grid(row=3, column=0, sticky="w", pady=8)
         destination = ttk.Entry(downloads, textvariable=self.output)
         destination.grid(row=3, column=1, sticky="ew", padx=8)
-        choose = ttk.Button(downloads, text="選擇資料夾…", command=self.choose_output)
+        choose = ttk.Button(downloads, text="選擇資料夾…", width=0, command=self.choose_output)
         choose.grid(row=3, column=2)
         self.controls.extend(((destination, "normal"), (choose, "normal")))
         self.download_button = ttk.Button(downloads, text="依畫面順序下載全部案號", command=self.start_download, state="disabled")
@@ -228,14 +240,48 @@ class DownloadPage(TaskPage):
             on_result=lambda text: self.events.put(("result", text, None)),
         ))
 
+    def filter_manual_courts(self, *_args):
+        def normalize(value):
+            return "".join(value.split()).replace("台", "臺").casefold()
+
+        value = self.manual_court.get()
+        query = normalize(value)
+        matches = [label for label, keywords in self.manual_court_keywords.items()
+                   if not query or value in self.manual_courts
+                   or any(query in normalize(keyword) for keyword in keywords)]
+        self.court_box.configure(values=matches)
+        return matches
+
+    def confirm_manual_court(self, event=None):
+        if self.busy:
+            return "break"
+        if self.manual_court.get() in self.manual_courts:
+            return "break"
+        matches = self.filter_manual_courts()
+        if len(matches) == 1:
+            self.manual_court.set(matches[0])
+            self.court_box.icursor(tk.END)
+        elif matches:
+            self.status.set("有多個符合法院，請從下拉選單選取。")
+            if event is not None:
+                self.court_box.event_generate("<Down>")
+        else:
+            self.status.set("找不到符合法院，請修改名稱、簡稱或代碼。")
+        return "break"
+
+    def select_court_text(self, _event=None):
+        self.court_box.selection_range(0, tk.END)
+        return "break"
+
     def add_case(self):
         if self.busy:
             return
         year, number = self.manual_year.get().strip(), self.manual_number.get().strip()
         word = self.manual_case.get().strip()
+        self.confirm_manual_court()
         court = self.manual_courts.get(self.manual_court.get())
         if not court or not word or not year.isascii() or not year.isdecimal() or not number.isascii() or not number.isdecimal() or int(year) < 1 or int(number) < 1:
-            messagebox.showerror("案號格式", "請選擇法院、填寫字別，年度與號數須為正整數。", parent=self.root)
+            messagebox.showerror("案號格式", "請從搜尋結果選定法院、填寫字別，年度與號數須為正整數。", parent=self.root)
             return
         case = CaseNumber(court=court, year=int(year), case=word, number=int(number))
         if case in self.cases:
@@ -361,6 +407,27 @@ class DownloadPage(TaskPage):
                 summary = f"下載完成：原始判決 {len(result['files'])} 個檔案；歷審判決 {len(result.get('history_files', []))} 個檔案；原始 {len(result['skipped'])} 個已存在並跳過；歷審 {len(result.get('history_skipped', []))} 個已存在並跳過；{len(result['empty'])} 個案號無符合結果；{len(result['errors'])} 項失敗。"
                 self.status.set(summary)
                 self.append_log(summary)
+                for title, key in (("原始判決已存在而跳過的案號", "skipped_documents"),
+                                   ("歷審判決已存在而跳過的案號", "history_skipped_documents"),
+                                   ("只勾選 TXT，但改存 PDF 的案號", "txt_to_pdf"),
+                                   ("只勾選 PDF，但改存 TXT 的案號", "pdf_to_txt"),
+                                   ("TXT、PDF 都勾選，但有格式未下載的案號", "missing_formats")):
+                    self.append_log(f"\n【{title}】")
+                    entries = result.get(key, [])
+                    if not entries:
+                        self.append_log("無")
+                    for entry in entries:
+                        jid = entry["jid"]
+                        details = [f"裁判日期：{jid.date}"]
+                        if jid.sequence is not None:
+                            details.append(f"版本：{jid.sequence}")
+                        if skipped_format := entry.get("skipped_format"):
+                            details.append(f"跳過格式：{skipped_format}")
+                        if missing := entry.get("missing_formats"):
+                            details.append(f"未下載：{'、'.join(missing)}")
+                        if original := entry.get("original_case"):
+                            details.append(f"原始案號：{original.to_string()}")
+                        self.append_log(f"{jid.case_number.to_string()}（{'；'.join(details)}）")
                 for title, cases in (("無符合結果或未公開的案號", result["empty"]),
                                      ("下載失敗的案號", result.get("failed_cases", []))):
                     self.append_log(f"\n【{title}】")

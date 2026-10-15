@@ -24,15 +24,16 @@ class TaskPage(ttk.Frame):
         entry = ttk.Entry(parent, textvariable=variable)
         entry.grid(row=row, column=1, sticky="ew", padx=6)
         self.controls.append((entry, "normal"))
-        actions = ttk.Frame(parent)
-        actions.grid(row=row, column=2, sticky="w")
+        # 所有列共用按鈕欄，由最長文字決定等寬尺寸，避免各列獨立排版而錯位。
+        for column in (2, 3):
+            parent.columnconfigure(column, uniform="path_buttons")
         choices = [("選擇資料夾", "directory")] if directory else (
             [("儲存為…", "save")] if save else [("選擇檔案", "file"), ("選擇資料夾", "directory")])
         for text, mode in choices:
-            button = ttk.Button(actions, text=text, command=lambda mode=mode: self.choose_path(variable, mode, filetypes))
-            if button_width is not None:
-                button.configure(width=button_width)
-            button.pack(side="left", padx=3)
+            # 負值表示最小字元寬度，讓 Tk 依實際字型擴寬，避免中文字被裁切。
+            button = ttk.Button(parent, text=text, width=-abs(button_width) if button_width else 0,
+                                command=lambda mode=mode: self.choose_path(variable, mode, filetypes))
+            button.grid(row=row, column=3 if mode == "directory" else 2, sticky="ew", padx=3)
             self.controls.append((button, "normal"))
 
     def choose_path(self, variable, mode, filetypes=None):

@@ -4,7 +4,8 @@ import argparse
 import json
 import time
 import re
-from urllib.parse import urljoin, urlparse, parse_qs
+from urllib.parse import urljoin, urlparse, parse_qs, unquote
+from email.message import Message
 from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
@@ -250,7 +251,9 @@ def download_cases(cases: list[CaseNumber], output, *, web=False, pdf=False, api
         raise ValueError("請至少選擇一個下載項目")
     from judgment_app.acquisition.api import get_token, get_judgment
 
-    report = {"files": [], "empty": [], "errors": [], "skipped": [], "failed_cases": [], "history_files": [], "history_skipped": []}
+    report = {"files": [], "empty": [], "errors": [], "skipped": [], "failed_cases": [], "history_files": [], "history_skipped": [],
+              "txt_to_pdf": [], "pdf_to_txt": [], "missing_formats": [],
+              "skipped_documents": [], "history_skipped_documents": []}
     history = history and (web or pdf)
     token = None
     with requests.Session() as session:
@@ -269,20 +272,28 @@ def download_cases(cases: list[CaseNumber], output, *, web=False, pdf=False, api
             history_seen = set(jids)
             for jid in jids:
                 name = jid.file_name
+                available_formats = set()
                 for enabled, mode, suffix in ((web, "網頁全文", ".txt"), (pdf, "PDF", ".pdf"), (api, "API", ".json")):
                     if not enabled:
                         continue
                     target = folder / f"{name}{suffix}"
                     if target.is_file():
-                        report["skipped"].append(str(target))
+                        available_formats.add(suffix)
+                        _record_skipped_document(report, jid, target)
                         if on_result:
                             on_result(f"檔案已存在，跳過下載 [{mode}]：{target}")
                         continue
                     try:
-                        if mode == "網頁全文":
-                            content = get_judgment_web(jid, session=session)["text"].encode("utf-8")
-                        elif mode == "PDF":
-                            content = get_judgment_pdf(jid, session=session)
+                        if mode in {"網頁全文", "PDF"}:
+                            path, skipped = _save_web_document(jid, folder, name, session, on_result, pdf=mode == "PDF")
+                            available_formats.add(path.suffix)
+                            if skipped:
+                                _record_skipped_document(report, jid, path)
+                            else:
+                                report["files"].append(str(path))
+                            if on_result:
+                                on_result(f"{'檔案已存在，跳過下載' if skipped else '下載成功'} [{mode}]：{path}")
+                            continue
                         else:
                             if on_result:
                                 on_result(f"API 下載中：{jid.to_string()}")
@@ -307,6 +318,7 @@ def download_cases(cases: list[CaseNumber], output, *, web=False, pdf=False, api
                             report["failed_cases"].append(case)
                         if on_result:
                             on_result(f"下載失敗 [{mode}]：{jid.to_string()}：{exc}")
+                _record_download_formats(report, jid, available_formats, web=web, pdf=pdf)
                 if history:
                     download_history(jid, case, folder, session, history_seen, report, on_result, web=web, pdf=pdf)
     return report
@@ -344,25 +356,28 @@ def download_history(jid: JudgmentId, original: CaseNumber, folder, session, see
         seen.add(related)
         # 日期與版本區分同案號的多份判決，重跑時檔名保持固定。
         name = related.file_name
+        available_formats = set()
         for enabled, mode, suffix in ((web, "網頁全文", ".txt"), (pdf, "PDF", ".pdf")):
             if not enabled:
                 continue
             target = folder / f"{name}{suffix}"
             if target.is_file():
-                report["history_skipped"].append(str(target))
+                available_formats.add(suffix)
+                _record_skipped_document(report, related, target, original)
                 log(f"歷審檔案已存在，跳過下載 [{mode}]：{target}")
                 continue
             log(f"歷審下載中 [{mode}]：{related.file_name}（原始案號：{original.file_name}）")
             try:
-                if mode == "網頁全文":
-                    content = get_judgment_web(related, session=session)["text"].encode("utf-8")
+                path, skipped = _save_web_document(related, folder, name, session, log, pdf=mode == "PDF")
+                available_formats.add(path.suffix)
+                if skipped:
+                    _record_skipped_document(report, related, path, original)
                 else:
-                    content = get_judgment_pdf(related, session=session)
-                path = save_document(folder, name, suffix, content)
-                report["history_files"].append(str(path))
-                log(f"歷審下載成功 [{mode}]：{path}")
+                    report["history_files"].append(str(path))
+                log(f"{'歷審檔案已存在，跳過下載' if skipped else '歷審下載成功'} [{mode}]：{path}")
             except (RuntimeError, ValueError, OSError, requests.RequestException) as exc:
                 failed(exc, related, mode)
+        _record_download_formats(report, related, available_formats, web=web, pdf=pdf, original=original)
 
 
 def download_case_pdfs(case_number: CaseNumber, output: str | Path) -> list[Path]:
@@ -430,6 +445,15 @@ def get_judgment_web(jid: JudgmentId, *, session=None) -> dict[str, str]:
         )
         response.raise_for_status()
         soup = BeautifulSoup(response.content, "html.parser")
+        download_link = _large_judgment_download_link(soup)
+        if download_link is not None:
+            url = urljoin(response.url, download_link["href"])
+            if urlparse(url).path.lower().endswith(".pdf"):
+                raise PdfOnlyJudgment(url, response.url)
+            suffix, content = _download_judgment_file(url, response.url, jid, client)
+            if suffix == ".pdf":
+                raise PdfOnlyJudgment(url, response.url, content)
+            return {"jid": jid_str, "url": response.url, "text": content.decode("utf-8")}
         body = soup.select_one(".jud_content")
         if body is None:
             raise RuntimeError(f"找不到裁判正文，可能遭阻擋或網站格式變更：{response.url}")
@@ -451,17 +475,14 @@ def get_judgment_pdf(jid: JudgmentId, *, session=None) -> bytes:
     with (requests.Session() if session is None else nullcontext(session)) as client:
         response = client.get(DOCUMENT_URL, params={"ty": "JD", "id": jid_str}, timeout=(10, 30))
         response.raise_for_status()
-        link = BeautifulSoup(response.content, "html.parser").select_one("a#hlExportPDF[href]")
+        soup = BeautifulSoup(response.content, "html.parser")
+        link = _large_judgment_download_link(soup)
+        if link is None:
+            link = soup.select_one("a#hlExportPDF[href]")
         if link is None:
             raise RuntimeError(f"網站未提供 PDF：{jid_str}")
         url = urljoin(response.url, link["href"])
-        if not url.startswith("https://judgment.judicial.gov.tw/"):
-            raise RuntimeError("無法識別網站 PDF 連結")
-        pdf = client.get(url, headers={"Referer": response.url}, timeout=(10, 60))
-        pdf.raise_for_status()
-        if not pdf.content.startswith(b"%PDF-"):
-            raise RuntimeError(f"下載回應不是 PDF，可能為網站錯誤頁：{jid_str}")
-        return pdf.content
+        return _download_pdf(url, response.url, jid, client)
 
 
 def save_document(folder: str | Path, name: str, suffix: str, content: bytes) -> Path:
@@ -576,6 +597,111 @@ class MeasuredSession(requests.Session):
                 "可能為限流、拒絕存取或維護，需檢查紀錄。"
             )
         response.raise_for_status()
+
+
+class PdfOnlyJudgment(RuntimeError):
+    """全文超過網頁上限，須改下載原始 PDF。"""
+
+    def __init__(self, pdf_url, page_url, content=None):
+        super().__init__(f"裁判書全文大於 1 M，僅提供 PDF：{pdf_url}")
+        self.pdf_url = pdf_url
+        self.page_url = page_url
+        self.content = content
+
+
+class TextOnlyJudgment(RuntimeError):
+    """網站的全文下載連結實際提供 TXT，不能另存成 PDF。"""
+
+    def __init__(self, url, content):
+        super().__init__(f"網站僅提供 TXT 全文：{url}")
+        self.content = content
+
+
+def _large_judgment_download_link(soup):
+    body = soup.select_one(".jud_content")
+    if body is None:
+        body = soup
+    if not re.search(r"裁判書全文大於\s*1\s*M", body.get_text(" ", strip=True), re.I):
+        return None
+    for link in body.select("a[href]"):
+        path = urlparse(link["href"]).path.lower()
+        if path.endswith((".pdf", ".txt", "/getoverlimit.ashx")) or path == "getoverlimit.ashx":
+            return link
+    raise RuntimeError("裁判書全文大於 1 M，但找不到全文下載連結（PDF／TXT）")
+
+
+def _download_pdf(url, referer, jid, session):
+    suffix, content = _download_judgment_file(url, referer, jid, session)
+    if suffix == ".txt":
+        raise TextOnlyJudgment(url, content)
+    return content
+
+
+def _download_judgment_file(url, referer, jid, session):
+    if not url.startswith("https://judgment.judicial.gov.tw/"):
+        raise RuntimeError(f"無法識別網站全文下載連結：{url}")
+    response = session.get(url, headers={"Referer": referer}, timeout=(10, 60))
+    response.raise_for_status()
+    if response.content.startswith(b"%PDF-"):
+        return ".pdf", response.content
+    disposition = Message()
+    disposition["Content-Disposition"] = response.headers.get("Content-Disposition", "")
+    filename = unquote(disposition.get_filename() or "")
+    if filename.lower().endswith(".txt") or urlparse(url).path.lower().endswith(".txt"):
+        try:
+            text = response.content.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise RuntimeError(f"全文文字檔不是 UTF-8：{jid.to_string()}；{url}") from exc
+        if not text.strip() or re.match(r"\s*<(?:!doctype\s+html|html|head|body)\b", text, re.I):
+            raise RuntimeError(f"全文文字檔為空或網站錯誤頁：{jid.to_string()}；{url}")
+        return ".txt", text.encode("utf-8")
+    raise RuntimeError(f"下載回應不是 PDF 或可辨識的 TXT，可能為網站錯誤頁：{jid.to_string()}；{url}")
+
+
+def _record_skipped_document(report, jid, path, original=None):
+    """保留原有檔案計數，另記錄可顯示的案號與實際跳過格式。"""
+    key = "history_skipped" if original is not None else "skipped"
+    report[key].append(str(path))
+    report[f"{key}_documents"].append({
+        "jid": jid, "original_case": original,
+        "skipped_format": path.suffix.lstrip(".").upper(),
+    })
+
+
+def _record_download_formats(report, jid, available, *, web, pdf, original=None):
+    """依單份判決的實際格式分類；已存在並跳過的檔案也算取得。"""
+    entry = {"jid": jid, "original_case": original}
+    if web and pdf:
+        missing = [label for suffix, label in ((".txt", "TXT"), (".pdf", "PDF")) if suffix not in available]
+        if missing:
+            report["missing_formats"].append({**entry, "missing_formats": missing})
+    elif web and ".pdf" in available and ".txt" not in available:
+        report["txt_to_pdf"].append(entry)
+    elif pdf and ".txt" in available and ".pdf" not in available:
+        report["pdf_to_txt"].append(entry)
+
+
+def _save_web_document(jid, folder, name, session, on_result, *, pdf=False):
+    suffix = ".pdf" if pdf else ".txt"
+    try:
+        content = get_judgment_pdf(jid, session=session) if pdf else get_judgment_web(jid, session=session)["text"].encode("utf-8")
+    except PdfOnlyJudgment as exc:
+        suffix = ".pdf"
+        if on_result:
+            on_result(f"裁判書全文大於 1 M，改下載原始 PDF：{jid.to_string()}")
+        target = Path(folder) / f"{name}{suffix}"
+        if target.is_file():
+            return target, True
+        content = exc.content if exc.content is not None else _download_pdf(exc.pdf_url, exc.page_url, jid, session)
+    except TextOnlyJudgment as exc:
+        suffix = ".txt"
+        if on_result:
+            on_result(f"網站提供的是 TXT 全文，改存文字檔：{jid.to_string()}")
+        target = Path(folder) / f"{name}{suffix}"
+        if target.is_file():
+            return target, True
+        content = exc.content
+    return save_document(folder, name, suffix, content), False
 
 
 def _get_soup(response):

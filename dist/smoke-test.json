@@ -1,0 +1,9 @@
+{
+  "application_dir": "C:\\Users\\user\\Desktop\\Python\\judgment_app\\dist",
+  "output": "C:\\Users\\user\\AppData\\Local\\JudgmentApp\\data\\judgments",
+  "xlsx": true,
+  "xls": true,
+  "https_certificates": true,
+  "gui": true,
+  "success": true
+}
