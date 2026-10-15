@@ -201,7 +201,10 @@ class DownloadPage(TaskPage):
         path, sheet = self.file.get(), self.sheet.get()
         columns = [variable.get().strip().upper() for variable in self.columns]
         self.status.set("正在讀取與檢查案號…")
-        self.run_task("cases", lambda: read_case_numbers(path, *columns, sheet_name=sheet, start_row=start))
+        self.run_task("cases", lambda: read_case_numbers(
+            path, *columns, sheet_name=sheet, start_row=start,
+            on_error=lambda text: self.events.put(("result", text, None)),
+        ))
 
     def choose_output(self):
         path = filedialog.askdirectory(parent=self.root, title="選擇判決書儲存資料夾")

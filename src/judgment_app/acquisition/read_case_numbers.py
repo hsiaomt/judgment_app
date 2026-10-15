@@ -2,6 +2,8 @@
 
 import re
 import argparse
+import logging
+from collections.abc import Callable
 from pathlib import Path
 
 import pandas as pd
@@ -29,6 +31,7 @@ def read_case_numbers(
     *,
     sheet_name: str | int = 0,
     start_row: int | None = None,
+    on_error: Callable[[str], None] | None = None,
 ) -> list[CaseNumber]:
     """依序讀取法院、年度、字別、號數，回傳可供 case_to_jids 使用的清單。
 
@@ -38,7 +41,8 @@ def read_case_numbers(
     法院全名、地院／高院簡稱及台／臺寫法會依 COURT_MAP 轉換為代碼。
     年度、號數轉為整數；依四個欄位去除重複案號，保留首次出現的順序。
     四欄全空的列略過。
-    部分欄位空白、未知法院或無效數字會拋出含 Excel 列號的 ValueError。
+    部分欄位空白、未知法院或無效數字會跳過該列，並以 on_error 回報列號與原因；
+    未提供 on_error 時寫入警告日誌。檔案讀取或欄位設定錯誤仍拋出例外。
     .xls 檔使用 xlrd 讀取；其他格式由 pandas 選擇對應的讀取引擎。
     """
     if start_row is not None and (isinstance(start_row, bool) or not isinstance(start_row, int) or start_row < 1):
@@ -70,19 +74,24 @@ def read_case_numbers(
         parts = ["" if pd.isna(value) else str(value).strip() for value in values]
         if not any(parts):
             continue
-        if not all(parts):
-            raise ValueError(f"Excel 第 {row_number} 列案號欄位不完整：{parts}")
-        court, year, case, number = parts
         try:
+            if not all(parts):
+                raise ValueError(f"案號欄位不完整：{parts}")
+            court, year, case, number = parts
             code = normalize_court(court)
+            integers = []
+            for label, value in (("年度", year), ("號數", number)):
+                if not re.fullmatch(r"[0-9]+(?:\.0+)?", value):
+                    raise ValueError(f"{label}必須是非負整數：{value}")
+                integers.append(int(value.split(".")[0]))
+            key = CaseNumber(code, integers[0], case, integers[1])
         except ValueError as exc:
-            raise ValueError(f"Excel 第 {row_number} 列{exc}") from exc
-        integers = []
-        for label, value in (("年度", year), ("號數", number)):
-            if not re.fullmatch(r"[0-9]+(?:\.0+)?", value):
-                raise ValueError(f"Excel 第 {row_number} 列{label}必須是非負整數：{value}")
-            integers.append(int(value.split(".")[0]))
-        key = CaseNumber(code, integers[0], case, integers[1])
+            message = f"Excel 第 {row_number} 列{exc}（已跳過）"
+            if on_error is not None:
+                on_error(message)
+            else:
+                logging.getLogger(__name__).warning(message)
+            continue
         if key in seen:
             continue
         seen.add(key)
