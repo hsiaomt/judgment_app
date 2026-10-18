@@ -11,7 +11,7 @@ from openpyxl import Workbook, load_workbook
 from pydantic import ValidationError
 
 from judgment_app.analysis.comparison_models import ComparisonReport, ComparisonResult
-from judgment_app.analysis.models import CrimeAnalysis, JudgmentAnalysis, LawReference
+from judgment_app.analysis.analysis_models import CrimeAnalysis, JudgmentAnalysis, LawReference
 from judgment_app.case_number import CaseNumber
 from judgment_app.paths import resolve_output_path
 

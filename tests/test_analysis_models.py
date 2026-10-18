@@ -3,7 +3,7 @@ import unittest
 from pydantic import ValidationError
 
 from judgment_app.analysis.analyzer import _decode, _schema
-from judgment_app.analysis.models import JudgmentAnalysis, LawReference
+from judgment_app.analysis.analysis_models import JudgmentAnalysis, LawReference
 
 
 class AnalysisModelsTests(unittest.TestCase):

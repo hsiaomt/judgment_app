@@ -8,7 +8,7 @@ import pandas as pd
 
 from judgment_app.analysis.compare import compare_files
 from judgment_app.analysis.compare import _load_analyses
-from judgment_app.analysis.models import (
+from judgment_app.analysis.analysis_models import (
     JudgmentAnalysis, DefendantAnalysis, CrimeAnalysis, ExecutionGroup, LawReference,
 )
 
