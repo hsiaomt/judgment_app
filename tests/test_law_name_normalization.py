@@ -11,12 +11,12 @@ class LawNameNormalizationTests(unittest.TestCase):
             ('毒品防制條例', '毒品危害防制條例'), ('洗錢防制法', '洗錢防制法'),
         ):
             with self.subTest(raw=raw):
-                law = LawReference(raw, 1)
-                self.assertEqual(law, LawReference(expected, 1))
+                law = LawReference(law_name=raw, article=1, is_attempted=False, is_accessory=False)
+                self.assertEqual(law, LawReference(law_name=expected, article=1, is_attempted=False, is_accessory=False))
                 self.assertEqual(law.to_dict()['law_name'], expected)
-                self.assertEqual(LawReference.from_dict({'law_name': raw, 'article': 1}), law)
+                self.assertEqual(LawReference.from_dict({'law_name': raw, 'article': 1, 'is_attempted': False, 'is_accessory': False}), law)
 
     def test_missing_name_raises_value_error(self):
         for name in (None, '', ' '):
             with self.subTest(name=name), self.assertRaises(ValueError):
-                LawReference(name, 1)
+                LawReference(law_name=name, article=1, is_attempted=False, is_accessory=False)

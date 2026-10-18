@@ -120,10 +120,6 @@ class ComparePage(TaskPage):
                     self.set_busy(False)
                     return
                 details = [row["reason"]] if row.get("reason") else []
-                for diff in row.get("differences", []):
-                    details.append(f"{diff['column']}：Excel={diff.get('excel_value')}，JSON={diff.get('json_value')}")
-                for field in row.get("uncomparable", []):
-                    details.append(f"{field['column']}：{field['reason']}")
                 item = self.comparison_tree.insert("", "end", values=(
                     row.get("file" if is_error else "excel", ""), row.get("sheet", ""), row.get("row", ""),
                     row.get("case_number", ""), row.get("name", ""), "error" if is_error else row["status"],

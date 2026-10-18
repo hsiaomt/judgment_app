@@ -87,6 +87,14 @@ class ExcelStatusTests(unittest.TestCase):
         self.assertEqual(len(report['rows']), 8)
         self.assertEqual(list(self.root.glob('~$status-*')), [])
 
+    def test_invalid_generated_result_is_rejected_before_excel_write(self):
+        original = self.excel.read_bytes()
+        with patch('judgment_app.analysis.compare._compare_row', return_value={'status': 'unmatched'}):
+            report = compare_files(self.excel, self.json_path)
+        self.assertEqual(report['rows'], [])
+        self.assertIn('reason', report['errors'][0]['error'])
+        self.assertEqual(self.excel.read_bytes(), original)
+
     def test_xls_exports_all_sheets_and_directory_skips_generated_files(self):
         source = self.root / 'legacy.xls'
         source.write_bytes(b'original legacy file')

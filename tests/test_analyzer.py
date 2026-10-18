@@ -1,4 +1,3 @@
-from dataclasses import asdict, fields
 import json
 from copy import deepcopy
 import os
@@ -24,20 +23,20 @@ class AnalyzeJudgmentTests(unittest.TestCase):
         self.source.write_text(json.dumps({"JID": "test-jid", "JFULLX": {
             "JFULLCONTENT": "判決全文測試"}}, ensure_ascii=False), encoding="utf-8-sig")
         self.output = self.root / "results.json"
-        law = LawReference("刑法", 339, paragraph=1, paragraph_sub=1)
-        crime = CrimeAnalysis(1, "測試罪名", False, False, [law], 1, 50,
-                              None, None, None, None, None, None, None)
+        law = LawReference(law_name="刑法", article=339, paragraph=1, paragraph_sub=1,
+                           is_attempted=False, is_accessory=False)
+        crime = CrimeAnalysis(crime_id=1, crime_jsst="科刑", crime_name="測試罪名",
+                              laws=[law], times=1, penalty=50)
         defendant = DefendantAnalysis(
-            name="王某", appeal_result=None, is_recidivist=False, crimes=[crime],
-            execution_groups=[ExecutionGroup(crime_ids=[1], executed_penalty=62, executed_penalty_to_fine=None,
-            executed_detention=None, executed_detention_to_fine=None,
-            executed_fine=None, executed_fine_to_detention=None,
-            executed_addition_fine=None, executed_addition_fine_to_detention=None)],
-            probation=None, probation_law=None, confiscation=["1000元"],
+            name="王某", is_recidivist=False, crimes=[crime],
+            execution_groups=[ExecutionGroup(crime_ids=[1], executed_jsst="科刑",
+                                              executed_penalty=62)],
+            confiscation=["1000元"],
         )
-        self.result = {"jid": "test-jid", "lower_court_case_number": None,
-                       "defendants": [asdict(defendant)], "is_pros_appeal": None,
-                       "pros_appearing": ["陳某"]}
+        self.result = JudgmentAnalysis(
+            case_number="臺灣高等法院115年度上訴字第1299號",
+            defendants=[defendant], pros_appearing=["陳某"],
+        ).model_dump()
         self.client = Mock()
         self.response = self.client.post.return_value
         self.response.json.return_value = self.payload()
@@ -58,7 +57,7 @@ class AnalyzeJudgmentTests(unittest.TestCase):
 
     def test_success_round_trip_and_replace(self):
         result = self.run_analysis(model="test-model")
-        self.assertEqual(asdict(result), self.result)
+        self.assertEqual(result.model_dump(), self.result)
         self.assertIsInstance(result.defendants[0].crimes[0], CrimeAnalysis)
         self.run_analysis(model="test-model")
         self.assertEqual(json.loads(self.output.read_text()), self.result)
@@ -73,9 +72,9 @@ class AnalyzeJudgmentTests(unittest.TestCase):
     def test_every_output_field_has_python_description(self):
         classes = (JudgmentAnalysis, DefendantAnalysis, ExecutionGroup, CrimeAnalysis, LawReference)
         for data_class in classes:
-            for output_field in fields(data_class):
-                with self.subTest(data_class=data_class.__name__, field=output_field.name):
-                    self.assertTrue(output_field.metadata.get("description"))
+            for name, output_field in data_class.model_fields.items():
+                with self.subTest(data_class=data_class.__name__, field=name):
+                    self.assertTrue(output_field.description)
 
     def test_target_and_history_are_sent_in_separate_fields(self):
         references = [{"jid": "history", "judgment": "歷審全文"}]
@@ -85,7 +84,7 @@ class AnalyzeJudgmentTests(unittest.TestCase):
         content = json.loads(body["input"])
         self.assertEqual(content["reference_documents"], references)
         self.assertEqual(content["judgment"], "判決全文測試")
-        self.assertIn("不得另輸出參考判決", body["instructions"])
+        self.assertIn("其餘為歷審參考資料", body["instructions"])
         self.assertEqual(json.loads(self.output.read_text()), self.result)
 
     def test_invalid_numeric_encodings_do_not_persist(self):
@@ -127,7 +126,7 @@ class AnalyzeJudgmentTests(unittest.TestCase):
         self.assertEqual(len(result.defendants), 1)
         self.assertEqual([c.times for c in result.defendants[0].crimes], [3, 2])
         self.assertEqual([g.crime_ids for g in result.defendants[0].execution_groups], [[1], [3]])
-        self.assertEqual(json.loads(self.output.read_text()), asdict(result))
+        self.assertEqual(json.loads(self.output.read_text()), result.model_dump())
 
     def test_invalid_group_references(self):
         group = self.result["defendants"][0]["execution_groups"][0]
@@ -151,7 +150,7 @@ class AnalyzeJudgmentTests(unittest.TestCase):
         properties = schema["properties"]
         defendant = properties["defendants"]["items"]["properties"]
         self.assertIn("同一被告一筆", properties["defendants"]["description"])
-        self.assertIn("一審蒞庭檢察官", properties["pros_appearing"]["description"])
+        self.assertIn("蒞庭檢察官", properties["pros_appearing"]["description"])
         self.assertIn("無罪仍列被訴罪名", defendant["crimes"]["description"])
         self.assertIn("應執行刑分組", defendant["execution_groups"]["description"])
 
@@ -160,7 +159,7 @@ class AnalyzeJudgmentTests(unittest.TestCase):
             if provider == "gemini":
                 self.response.json.return_value = {"candidates": [{"finishReason": "STOP",
                     "content": {"parts": [{"text": json.dumps(self.result)}]}}]}
-            with patch("judgment_app.analysis.models.ANALYSIS_RULES", "新版規則"), patch.dict(
+            with patch("judgment_app.analysis.models.PROMPT_RULES", "新版規則"), patch.dict(
                 os.environ, {"GEMINI_API_KEY": "test"}
             ):
                 self.run_analysis(provider=provider)
@@ -178,7 +177,7 @@ class AnalyzeJudgmentTests(unittest.TestCase):
         original_output = self.output.read_text()
         law = self.result["defendants"][0]["crimes"][0]["laws"][0]
         for field, value in (("article", 0), ("article_sub", -1), ("paragraph", 0),
-                             ("subparagraph", 0), ("part", "前段"), ("law_name", " ")):
+                             ("paragraph_sub", 0), ("paragraph_part", "前段"), ("law_name", " ")):
             original = law[field]
             law[field] = value
             self.response.json.return_value = self.payload()
@@ -189,13 +188,13 @@ class AnalyzeJudgmentTests(unittest.TestCase):
 
     def test_executed_fields_have_schema_descriptions_and_allow_null(self):
         for field in self.result["defendants"][0]["execution_groups"][0]:
-            if field.startswith("executed_"):
+            if field.startswith("executed_") and field != "executed_jsst":
                 self.result["defendants"][0]["execution_groups"][0][field] = None
         self.response.json.return_value = self.payload()
         self.run_analysis()
         schema = self.client.post.call_args.kwargs["json"]["text"]["format"]["schema"]
         defendant = schema["properties"]["defendants"]["items"]["properties"]["execution_groups"]["items"]
-        fields = [name for name in defendant["properties"] if name.startswith("executed_")]
+        fields = [name for name in defendant["properties"] if name.startswith("executed_") and name != "executed_jsst"]
         self.assertEqual(len(fields), 8)
         for field in fields:
             self.assertIn(field, defendant["required"])
@@ -208,7 +207,7 @@ class AnalyzeJudgmentTests(unittest.TestCase):
                 {"text": "reasoning", "thought": True}, {"text": json.dumps(self.result)}]}}]}
         with patch.dict(os.environ, {"GEMINI_API_KEY": "gemini-key", "OPENAI_API_KEY": ""}):
             result = self.run_analysis(provider="gemini", model="gemini-2.5-flash")
-        self.assertEqual(asdict(result), self.result)
+        self.assertEqual(result.model_dump(), self.result)
         call = self.client.post.call_args
         self.assertIn("generativelanguage.googleapis.com", call.args[0])
         self.assertEqual(call.kwargs["headers"], {"x-goog-api-key": "gemini-key"})
@@ -269,19 +268,35 @@ class AnalyzeJudgmentTests(unittest.TestCase):
                     self.run_analysis()
                 self.assertFalse(self.output.exists())
 
-    def test_wrong_types_fields_and_jid_do_not_persist(self):
-        for field, value in (("jid", "wrong"), ("is_pros_appeal", 1), ("defendants", {})):
+    def test_wrong_types_fields_and_case_number_do_not_persist(self):
+        for field, value in (("case_number", "wrong"), ("pros_appearing", 1), ("defendants", {})):
             original = self.result[field]
             self.result[field] = value
             self.response.json.return_value = self.payload()
             with self.subTest(field=field), self.assertRaises(ValueError):
-                self.run_analysis()
+                self.run_analysis(target_case_number="臺灣高等法院115年度上訴字第1299號")
             self.result[field] = original
         self.result["extra"] = "unexpected"
         self.response.json.return_value = self.payload()
         with self.assertRaises(ValueError):
-            self.run_analysis()
+            self.run_analysis(target_case_number="臺灣高等法院115年度上訴字第1299號")
         self.assertFalse(self.output.exists())
+
+    def test_nullable_laws_are_saved(self):
+        self.result["defendants"][0]["crimes"][0]["laws"] = None
+        self.response.json.return_value = self.payload()
+        result = self.run_analysis()
+        self.assertIsNone(result.defendants[0].crimes[0].laws)
+        self.assertEqual(json.loads(self.output.read_text()), self.result)
+
+    def test_missing_nullable_field_does_not_overwrite_output(self):
+        self.run_analysis()
+        original = self.output.read_text()
+        del self.result["defendants"][0]["crimes"][0]["fine"]
+        self.response.json.return_value = self.payload()
+        with self.assertRaisesRegex(ValueError, "fine"):
+            self.run_analysis()
+        self.assertEqual(self.output.read_text(), original)
 
     def test_http_error_preserves_context(self):
         original = requests.HTTPError("Unauthorized")

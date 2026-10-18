@@ -96,8 +96,7 @@ class GuiComparisonTests(unittest.TestCase):
 
     def test_import_existing_report_without_comparing_or_writing(self):
         app = self.app()
-        report = {'rows': [{'status': 'equal'}, {'status': 'different',
-                  'differences': [{'column': '累犯', 'excel_value': True, 'json_value': False}]}],
+        report = {'rows': [{'status': 'equal'}, {'status': 'unmatched', 'reason': '累犯不合'}],
                   'errors': [{'error': '來源讀取錯誤'}], 'summary': {'total': 999}}
         with TemporaryDirectory() as directory:
             source = Path(directory) / 'report.json'
@@ -113,7 +112,8 @@ class GuiComparisonTests(unittest.TestCase):
             self.assertEqual(source.read_bytes(), original)
         self.assertIn('報告匯入完成：共 2 列，equal 1 列', app.status.set.call_args.args[0])
         values = [call.kwargs['values'] for call in app.comparison_tree.insert.call_args_list]
-        self.assertEqual([row[5] for row in values], ['different', 'error'])
+        self.assertEqual([row[5] for row in values], ['unmatched', 'error'])
+        self.assertIn('累犯', values[0][6])
         app.output.set.assert_not_called()
 
     def test_import_cancel_and_busy_do_not_start(self):
@@ -131,7 +131,10 @@ class GuiComparisonTests(unittest.TestCase):
         invalid = ['{', '[]', '{"case_number": "判決分析"}',
                    '{"rows": [{"status": "different", "differences": [null]}], "errors": []}',
                    '{"rows": [{"status": "invalid", "reason": {}}], "errors": []}',
-                   '{"rows": [], "errors": ["bad"]}']
+                   '{"rows": [], "errors": ["bad"]}',
+                   '{"rows": [{"status": "unmatched"}], "errors": []}',
+                   '{"rows": [], "errors": [], "excel_outputs": [null]}',
+                   '{"rows": [], "errors": [], "excel_outputs": [{"source": "a.xlsx"}]}']
         with TemporaryDirectory() as directory:
             source = Path(directory) / 'report.json'
             for content in invalid:

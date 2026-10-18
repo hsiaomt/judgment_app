@@ -75,7 +75,7 @@ class CompareAnalysisTests(unittest.TestCase):
         report = compare_files(self.excel, self.root)
         self.assertEqual(report['rows'][0]['status'], 'unmatched')
         self.assertEqual(report['errors'][0]['file'], str(self.source))
-        self.assertIn('crimes[0]', report['errors'][0]['error'])
+        self.assertIn('defendants.0.crimes.0.laws.0.is_attempted', report['errors'][0]['error'])
         self.assertIn('is_attempted', report['errors'][0]['error'])
 
     def test_invalid_nested_collection_is_reported_at_load(self):

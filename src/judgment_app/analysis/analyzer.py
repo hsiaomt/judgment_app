@@ -4,18 +4,15 @@ Usage: uv run python -m judgment_app.analysis.analyzer judgment.txt --output res
 """
 
 import argparse
-from dataclasses import asdict, fields, is_dataclass
 import json
 import os
 from pathlib import Path
 import re
-from types import UnionType
-from typing import get_args, get_origin, get_type_hints
 
 import requests
 
 from judgment_app.analysis import models
-from judgment_app.analysis.models import JudgmentAnalysis, LawReference
+from judgment_app.analysis.models import JudgmentAnalysis
 from judgment_app.case_number import CaseNumber
 from judgment_app.paths import load_settings, resolve_output_path
 
@@ -33,7 +30,7 @@ def main() -> None:
         args.input, args.output, model=args.model, jid=args.jid, provider=args.provider,
         encoding=args.encoding,
     )
-    print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+    print(json.dumps(result.model_dump(), ensure_ascii=False, indent=2))
     print(f"已儲存：{_output_path(args.input, args.output)}")
 
 
@@ -198,8 +195,8 @@ def analyze_judgment(
             raise ValueError("OpenAI 未回傳分析結果")
         output_text = "".join(parts)
     result = _decode(JudgmentAnalysis, json.loads(output_text))
-    if result.jid != expected_jid:
-        raise ValueError(f"回應 JID 不一致：預期 {expected_jid!r}，實際 {result.jid!r}")
+    if target_case_number and result.case_number != target_case_number:
+        raise ValueError(f"回應案號不一致：預期 {target_case_number!r}，實際 {result.case_number!r}")
     _validate_values(result)
     _merge_identical_crimes(result)
     save_analysis(destination, result)
@@ -208,7 +205,7 @@ def analyze_judgment(
 
 def save_analysis(output_path: str | Path, result: JudgmentAnalysis) -> None:
     """Write validated data as a standalone UTF-8 JSON object."""
-    data = asdict(result)
+    data = result.model_dump()
     _decode(JudgmentAnalysis, data)
     _validate_values(result)
     path = Path(output_path)
@@ -279,7 +276,7 @@ def _merge_identical_crimes(result: JudgmentAnalysis) -> None:
     for defendant in result.defendants:
         grouped = {}
         for crime in defendant.crimes:
-            fields = asdict(crime)
+            fields = crime.model_dump()
             fields.pop("times")
             fields.pop("crime_id")
             fields["groups"] = [i for i, group in enumerate(defendant.execution_groups) if crime.crime_id in group.crime_ids]
@@ -294,45 +291,15 @@ def _merge_identical_crimes(result: JudgmentAnalysis) -> None:
 
 
 def _validate_values(result: JudgmentAnalysis) -> None:
-    """Reject impossible encodings before writing JSON."""
+    """檢查跨欄位的罪名識別碼與分組引用；單欄位限制由模型驗證。"""
     for index, defendant in enumerate(result.defendants):
         location = f"defendants[{index}]"
-        if defendant.probation_law not in (None, 1, 2):
-            raise ValueError(f"{location}.probation_law 必須為 1、2 或 null")
-        if defendant.probation is not None and defendant.probation < 0:
-            raise ValueError(f"{location}.probation 不可為負數")
-        ids = [crime.crime_id for crime in defendant.crimes]
-        if any(type(cid) is not int or cid < 1 for cid in ids) or len(ids) != len(set(ids)):
-            raise ValueError(f"{location}.crime_id 必須為唯一正整數")
+        ids = {crime.crime_id for crime in defendant.crimes}
+        if len(ids) != len(defendant.crimes):
+            raise ValueError(f"{location}.crime_id 必須唯一")
         for group_index, group in enumerate(defendant.execution_groups):
-            group_location = f"{location}.execution_groups[{group_index}]"
-            if not group.crime_ids or len(group.crime_ids) != len(set(group.crime_ids)) or any(
-                type(cid) is not int or cid not in ids for cid in group.crime_ids
-            ):
-                raise ValueError(f"{group_location}.crime_ids 引用無效或重複")
-            for field, value in asdict(group).items():
-                if field.startswith("executed_") and type(value) is int and value < 0:
-                    raise ValueError(f"{group_location}.{field} 不可為負數")
-            if group.executed_penalty is not None and group.executed_penalty > 360:
-                raise ValueError(f"{group_location}.executed_penalty 不可超過 360 月")
-        for crime_index, crime in enumerate(defendant.crimes):
-            for law_index, law in enumerate(crime.laws):
-                _validate_law(law, f"{location}.crimes[{crime_index}].laws[{law_index}]")
-            if type(crime.times) is not int or crime.times < 1:
-                raise ValueError(f"{location}.crimes[{crime_index}].times 必須為正整數")
-            for field, value in asdict(crime).items():
-                if type(value) is int and value < 0:
-                    raise ValueError(f"{location}.crimes[{crime_index}].{field} 不可為負數")
-
-def _validate_law(law: LawReference, location: str) -> None:
-    if not law.law_name.strip():
-        raise ValueError(f"{location}.law_name 不可空白")
-    for name in ("article", "article_sub", "paragraph", "paragraph_sub"):
-        value = getattr(law, name)
-        if value is not None and (type(value) is not int or value < 1):
-            raise ValueError(f"{location}.{name} 必須為正整數")
-    if law.paragraph_part not in (None, "A", "B", "C"):
-        raise ValueError(f"{location}.part 必須為 A、B、C 或 null")
+            if not set(group.crime_ids) <= ids:
+                raise ValueError(f"{location}.execution_groups[{group_index}].crime_ids 引用無效")
 
 
 def _case_folder_jobs(folder: Path) -> list:
@@ -371,43 +338,33 @@ def _case_folder_jobs(folder: Path) -> list:
 
 
 def _schema(kind) -> dict:
-    if is_dataclass(kind):
-        properties = {}
-        hints = get_type_hints(kind)
-        for item in fields(kind):
-            field_schema = _schema(hints[item.name])
-            if description := item.metadata.get("description"):
-                field_schema["description"] = description
-            properties[item.name] = field_schema
-        return {"type": "object", "properties": properties,
-                "required": list(properties), "additionalProperties": False}
-    if get_origin(kind) is UnionType:
-        return {"anyOf": [_schema(option) for option in get_args(kind)]}
-    if get_origin(kind) is list:
-        return {"type": "array", "items": _schema(get_args(kind)[0])}
-    return {"type": {str: "string", int: "integer", bool: "boolean", type(None): "null"}[kind]}
+    """以 Pydantic schema 為基礎，保留回應必須完整輸出所有欄位的規則。"""
+    schema = kind.model_json_schema()
+    definitions = schema.pop("$defs", {})
+
+    def prepare(node):
+        if isinstance(node, list):
+            return [prepare(item) for item in node]
+        if not isinstance(node, dict):
+            return node
+        if "$ref" in node:
+            name = node["$ref"].removeprefix("#/$defs/")
+            node = {**definitions[name], **{k: v for k, v in node.items() if k != "$ref"}}
+        result = {key: prepare(value) for key, value in node.items()
+                  if key not in {"default", "title"}}
+        if result.get("type") == "object":
+            result["required"] = list(result.get("properties", {}))
+            result["additionalProperties"] = False
+        return result
+
+    return prepare(schema)
 
 
 def _decode(kind, value, location: str = "result"):
-    if get_origin(kind) is UnionType:
-        for option in get_args(kind):
-            try:
-                return _decode(option, value, location)
-            except ValueError:
-                pass
-        raise ValueError(f"{location} 型別錯誤：預期 {kind}")
-    if is_dataclass(kind):
-        hints = get_type_hints(kind)
-        if not isinstance(value, dict) or set(value) != set(hints):
-            raise ValueError(f"{location} 欄位不符合 {kind.__name__}")
-        return kind(**{name: _decode(t, value[name], f"{location}.{name}") for name, t in hints.items()})
-    if get_origin(kind) is list:
-        if not isinstance(value, list):
-            raise ValueError(f"{location} 必須是清單")
-        return [_decode(get_args(kind)[0], item, f"{location}[{i}]") for i, item in enumerate(value)]
-    if type(value) is not kind:
-        raise ValueError(f"{location} 型別錯誤：預期 {kind.__name__}")
-    return value
+    try:
+        return kind.model_validate(value, context={"require_all_fields": True})
+    except ValueError as exc:
+        raise ValueError(f"{location}: {exc}") from exc
 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 """比對檢核 Excel 與分析 JSON；以 --help 查看用法。"""
 
 import argparse
-from collections import Counter
 import json
 from pathlib import Path
 import re
@@ -9,7 +8,9 @@ from tempfile import NamedTemporaryFile
 
 import pandas as pd
 from openpyxl import Workbook, load_workbook
+from pydantic import ValidationError
 
+from judgment_app.analysis.comparison_models import ComparisonReport, ComparisonResult
 from judgment_app.analysis.models import CrimeAnalysis, JudgmentAnalysis, LawReference
 from judgment_app.case_number import CaseNumber
 from judgment_app.paths import resolve_output_path
@@ -48,28 +49,10 @@ def load_comparison_report(path: str | Path) -> dict:
     """讀取既有報告，驗證顯示所需欄位；不修改檔案。"""
     source = resolve_output_path(path)
     report = json.loads(source.read_text(encoding="utf-8-sig"))
-    if not isinstance(report, dict) or not isinstance(report.get("rows"), list) or not isinstance(report.get("errors"), list):
-        raise ValueError(f"不是有效的比對報告（需包含 rows、errors 清單）：{source}")
-    for index, row in enumerate(report["rows"], 1):
-        location = f"rows 第 {index} 筆"
-        if not isinstance(row, dict) or not isinstance(row.get("status"), str) or not row["status"]:
-            raise ValueError(f"{location} 缺少有效的 status")
-        if row.get("reason") is not None and not isinstance(row["reason"], str):
-            raise ValueError(f"{location} 的 reason 必須是字串")
-        for field, required in (("differences", ("column",)), ("uncomparable", ("column", "reason"))):
-            items = row.get(field, [])
-            if not isinstance(items, list) or any(
-                not isinstance(item, dict) or any(not isinstance(item.get(key), str) for key in required)
-                for item in items
-            ):
-                raise ValueError(f"{location} 的 {field} 格式錯誤")
-    for index, error in enumerate(report["errors"], 1):
-        if not isinstance(error, dict) or not isinstance(error.get("error"), str):
-            raise ValueError(f"errors 第 {index} 筆缺少錯誤訊息")
-    # 摘要依實際內容計算，避免外部報告的過期統計影響顯示。
-    report["summary"] = dict(Counter(row["status"] for row in report["rows"]))
-    report["summary"].update(total=len(report["rows"]), errors=len(report["errors"]))
-    return report
+    try:
+        return ComparisonReport.model_validate(report).to_dict()
+    except ValidationError as exc:
+        raise ValueError(f"不是有效的比對報告：{source}：{exc}") from exc
 
 
 def compare_to_report(excel_path: Path, json_path: Path, destination: Path, *, progress=None) -> dict:
@@ -139,6 +122,9 @@ def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
                             context.update(_compare_row(row, index))
                         except (ValueError, TypeError, KeyError) as exc:
                             context.update(status="unmatched", reason=str(exc))
+                        context = ComparisonResult.model_validate(context).model_dump(
+                            mode="json", by_alias=True, exclude_unset=True,
+                        )
                         report["rows"].append(context)
                         sheet_statuses[i + 1] = context["status"]
             if statuses:
@@ -150,9 +136,7 @@ def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
                     progress(f"已儲存 Excel 比對結果：{output}")
         except Exception as exc:
             report["errors"].append({"file": str(path), "error": f"{type(exc).__name__}: {exc}"})
-    report["summary"] = dict(Counter(row["status"] for row in report["rows"]))
-    report["summary"].update(total=len(report["rows"]), errors=len(report["errors"]))
-    return report
+    return ComparisonReport.model_validate(report).to_dict()
 
 
 def _write_excel_statuses(path: Path, statuses: dict, *, legacy_tables=None) -> Path:
