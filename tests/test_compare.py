@@ -369,7 +369,40 @@ class CompareAnalysisTests(unittest.TestCase):
         self.row['未遂'] = '是'
         self.assertEqual(self.run_report()['status'], 'equal')
         self.row['幫助'] = '是'
-        self.assertEqual(self.run_report()['status'], 'unmatched')
+        self.assertEqual(self.run_report()['reason'], '幫助犯不合')
+
+    def test_candidate_mismatch_reasons(self):
+        for column, value, reason in (
+            ('條', 340, '法條不合'), ('未遂', '是', '未遂不合'),
+            ('幫助', '是', '幫助犯不合'), ('裁判情形', '免刑', '裁判情形不合'),
+            ('徒刑(YYMM)', 403, '刑度不合'),
+        ):
+            with self.subTest(column=column):
+                original = self.row[column]
+                self.row[column] = value
+                result = self.run_report()
+                self.assertEqual(result['status'], 'unmatched')
+                self.assertEqual(result['reason'], reason)
+                self.row[column] = original
+
+    def test_flags_must_match_the_same_law(self):
+        laws = self.data['defendants'][0]['crimes'][0]['laws']
+        laws.append(deepcopy(laws[0]))
+        laws[0]['is_attempted'] = True
+        laws[1]['is_accessory'] = True
+        self.row['未遂'] = '是'
+        self.row['幫助'] = '是'
+        self.assertEqual(self.run_report()['reason'], '幫助犯不合')
+
+    def test_multiple_documents_show_specific_mismatch_reasons(self):
+        self.row['條'] = 340
+        self.run_report()
+        other = deepcopy(self.data)
+        other['defendants'][0]['crimes'][0]['laws'][0].update(article=340, is_attempted=True)
+        (self.root / '另一份.analysis.json').write_text(json.dumps(other))
+        result = self.run_report()
+        self.assertEqual(result['status'], 'unmatched')
+        self.assertEqual(set(result['reason'].split('；')), {'法條不合', '未遂不合'})
 
     def test_flags_select_matching_crime(self):
         defendant = self.data['defendants'][0]

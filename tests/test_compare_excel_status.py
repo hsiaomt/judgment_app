@@ -8,7 +8,7 @@ import pandas as pd
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
-from judgment_app.analysis.compare import compare_files
+from judgment_app.analysis.compare import compare_files, _compare_row, _write_excel_statuses
 
 
 class ExcelStatusTests(unittest.TestCase):
@@ -52,7 +52,8 @@ class ExcelStatusTests(unittest.TestCase):
         self.assertEqual([r['status'] for r in report['rows'][:4]],
                          ['equal', 'unmatched', 'unmatched', 'unmatched'])
         for row in report['rows']:
-            self.assertEqual(book[row['sheet']].cell(row['row'], 9).value, row['status'])
+            expected = row['reason'] if row['status'] == 'unmatched' else 'equal'
+            self.assertEqual(book[row['sheet']].cell(row['row'], 9).value, expected)
         self.assertEqual(book['比對'].cell(2, 9).value, 'status')
         self.assertTrue(book['比對']['A1'].font.bold)
         self.assertIn('A1:C1', book['比對'].merged_cells)
@@ -73,7 +74,7 @@ class ExcelStatusTests(unittest.TestCase):
         book = load_workbook(self.excel)
         self.addCleanup(book.close)
         self.assertEqual(book['比對'].max_column, 9)
-        self.assertEqual(book['比對']['I3'].value, 'unmatched')
+        self.assertEqual(book['比對']['I3'].value, '被告姓名無法唯一配對')
         self.assertIsNone(book['比對']['I4'].value)
         self.assertFalse(any(r['sheet'] == '比對' and r['row'] == 4 for r in report['rows']))
         self.assertNotIn('status', report['sheets'][0]['uncompared_columns'])
@@ -95,6 +96,67 @@ class ExcelStatusTests(unittest.TestCase):
         self.assertIn('reason', report['errors'][0]['error'])
         self.assertEqual(self.excel.read_bytes(), original)
 
+    def test_failed_sheet_does_not_stop_later_sheets_or_status_write(self):
+        book = load_workbook(self.excel)
+        book.copy_worksheet(book['比對']).title = '第三張'
+        book.save(self.excel)
+        book.close()
+        original_parse = pd.ExcelFile.parse
+
+        def parse(book, sheet, **kwargs):
+            if sheet == '第二張':
+                raise ValueError('工作表讀取失敗')
+            return original_parse(book, sheet, **kwargs)
+
+        with patch.object(pd.ExcelFile, 'parse', parse):
+            report = compare_files(self.excel, self.json_path)
+        self.assertEqual({r['sheet'] for r in report['rows']}, {'比對', '第三張'})
+        error = next(e for e in report['errors'] if e['sheet'] == '第二張')
+        self.assertEqual(error['stage'], 'read_sheet')
+        self.assertIn('ValueError', error['error'])
+        book = load_workbook(self.excel)
+        self.assertEqual(book['比對']['I3'].value, 'equal')
+        self.assertEqual(book['第三張']['I3'].value, 'equal')
+        self.assertEqual(book['第二張'].max_column, 8)
+        book.close()
+
+    def test_row_exception_does_not_stop_later_rows(self):
+        def compare(row, index):
+            if row['姓名'] == '乙':
+                raise RuntimeError('單列處理失敗')
+            return _compare_row(row, index)
+
+        with patch('judgment_app.analysis.compare._compare_row', side_effect=compare):
+            report = compare_files(self.excel, self.json_path)
+        self.assertEqual(len(report['rows']), 8)
+        error = next(e for e in report['errors'] if e['stage'] == 'compare_row')
+        self.assertEqual((error['sheet'], error['row']), ('比對', 5))
+        book = load_workbook(self.excel)
+        self.assertEqual(book['比對']['I5'].value, 'RuntimeError: 單列處理失敗')
+        last_row = next(r for r in report['rows'] if r['sheet'] == '比對' and r['row'] == 6)
+        self.assertEqual(book['比對']['I6'].value, last_row['reason'])
+        book.close()
+
+    def test_bad_workbook_and_save_failure_do_not_stop_other_files(self):
+        broken = self.root / 'a-broken.xlsx'
+        broken.write_bytes(b'invalid excel')
+        other = self.root / 'z-other.xlsx'
+        other.write_bytes(self.excel.read_bytes())
+        original = self.excel.read_bytes()
+
+        def write(path, *args, **kwargs):
+            if path == self.excel:
+                raise PermissionError('無法寫入')
+            return _write_excel_statuses(path, *args, **kwargs)
+
+        with patch('judgment_app.analysis.compare._write_excel_statuses', side_effect=write):
+            report = compare_files(self.root, self.json_path)
+        self.assertEqual(len(report['rows']), 16)
+        self.assertTrue(any(e['file'] == str(broken) and e['stage'] == 'read_workbook' for e in report['errors']))
+        self.assertTrue(any(e['file'] == str(self.excel) and e['stage'] == 'write_excel' for e in report['errors']))
+        self.assertEqual(self.excel.read_bytes(), original)
+        self.assertEqual(report['excel_outputs'], [{'source': str(other), 'output': str(other)}])
+
     def test_xls_exports_all_sheets_and_directory_skips_generated_files(self):
         source = self.root / 'legacy.xls'
         source.write_bytes(b'original legacy file')
@@ -113,6 +175,7 @@ class ExcelStatusTests(unittest.TestCase):
             self.assertEqual(book.sheetnames, ['比對', '第二張', '說明'])
             self.assertEqual(book['比對']['I2'].value, 'status')
             self.assertEqual(book['比對']['I3'].value, 'equal')
+            self.assertEqual(book['比對']['I4'].value, '累犯不合')
             book.close()
             report = compare_files(self.root, self.json_path)
             self.assertEqual(len(report['rows']), 16)  # 只讀原本的 xls 與 xlsx。
@@ -120,3 +183,25 @@ class ExcelStatusTests(unittest.TestCase):
             self.assertTrue((self.root / 'legacy.status-2.xlsx').is_file())
             self.assertEqual(output.read_bytes(), first_output)
             self.assertEqual(source.read_bytes(), b'original legacy file')
+
+    def test_xls_read_failure_keeps_results_without_exporting_incomplete_workbook(self):
+        source = self.root / 'legacy.xls'
+        source.write_bytes(b'original legacy file')
+        original_excel_file = pd.ExcelFile
+        original_parse = pd.ExcelFile.parse
+
+        def parse(book, sheet, **kwargs):
+            if sheet == '第二張':
+                raise ValueError('工作表讀取失敗')
+            return original_parse(book, sheet, **kwargs)
+
+        with patch.object(original_excel_file, 'parse', parse), patch(
+            'judgment_app.analysis.compare.pd.ExcelFile',
+            side_effect=lambda path: original_excel_file(self.excel),
+        ):
+            report = compare_files(source, self.json_path)
+        self.assertEqual(len(report['rows']), 4)
+        self.assertEqual(report['excel_outputs'], [])
+        self.assertTrue(any(e['stage'] == 'write_excel' and '第二張' in e['error'] for e in report['errors']))
+        self.assertFalse((self.root / 'legacy.status.xlsx').exists())
+        self.assertEqual(source.read_bytes(), b'original legacy file')

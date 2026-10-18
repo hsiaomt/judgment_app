@@ -89,54 +89,100 @@ def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
     for file_index, path in enumerate(files, 1):
         if progress:
             progress(f"正在比對 Excel {file_index} / {len(files)}：{path.name}")
+        statuses = {}
+        legacy_tables = {} if path.suffix.lower() == ".xls" else None
+        unread_sheets = []
         try:
-            statuses = {}
-            legacy_tables = {} if path.suffix.lower() == ".xls" else None
-            with pd.ExcelFile(path) as book:
-                for sheet in book.sheet_names:
-                    if progress:
-                        progress(f"正在比對 {path.name}／{sheet}")
+            book = pd.ExcelFile(path)
+        except Exception as exc:
+            report["errors"].append({"file": str(path), "stage": "read_workbook",
+                                     "error": f"{type(exc).__name__}: {exc}"})
+            continue
+        try:
+            for sheet in book.sheet_names:
+                if progress:
+                    progress(f"正在比對 {path.name}／{sheet}")
+                try:
                     table = book.parse(sheet, header=None, dtype=object)
-                    if legacy_tables is not None:
-                        legacy_tables[sheet] = table
-                    header = next((i for i, row in table.iterrows()
-                                   if IDENTITY_COLUMNS <= {_text(x) for x in row}), None)
-                    if header is None:
-                        report["errors"].append({"file": str(path), "sheet": sheet, "error": "找不到裁判案號及姓名標題列"})
-                        continue
-                    columns = {}
-                    for i, name in enumerate(table.iloc[header]):
-                        columns.setdefault(_text(name), i)
-                    # status 是前次比對的輸出，不參與欄位比對或空白列判斷。
-                    columns.pop("status", None)
-                    sheet_statuses = {}
-                    statuses[sheet] = (header + 1, sheet_statuses)
-                    report["sheets"].append({"file": str(path), "sheet": sheet,
-                        "uncompared_columns": [c for c in columns if c and c not in FIELD_MAP and c not in IDENTITY_COLUMNS]})
-                    for i in range(header + 1, len(table)):
-                        row = {name: table.iat[i, col] for name, col in columns.items() if name}
-                        if all(_blank(x) for x in row.values()):
-                            continue
-                        context = {"excel": str(path), "sheet": sheet, "row": i + 1, "name": _text(row.get("姓名"))}
-                        try:
-                            context.update(_compare_row(row, index))
-                        except (ValueError, TypeError, KeyError) as exc:
-                            context.update(status="unmatched", reason=str(exc))
-                        context = ComparisonResult.model_validate(context).model_dump(
-                            mode="json", by_alias=True, exclude_unset=True,
-                        )
-                        report["rows"].append(context)
-                        sheet_statuses[i + 1] = context["status"]
-            if statuses:
+                except Exception as exc:
+                    unread_sheets.append(sheet)
+                    report["errors"].append({"file": str(path), "sheet": sheet, "stage": "read_sheet",
+                                             "error": f"{type(exc).__name__}: {exc}"})
+                    continue
+                if legacy_tables is not None:
+                    legacy_tables[sheet] = table
+                try:
+                    rows, sheet_report, sheet_statuses, errors = _compare_sheet(table, path, sheet, index)
+                except Exception as exc:
+                    report["errors"].append({"file": str(path), "sheet": sheet, "stage": "compare_sheet",
+                                             "error": f"{type(exc).__name__}: {exc}"})
+                    continue
+                report["rows"].extend(rows)
+                report["sheets"].append(sheet_report)
+                report["errors"].extend(errors)
+                if sheet_statuses[1] or not errors:
+                    statuses[sheet] = sheet_statuses
+        finally:
+            try:
+                book.close()
+            except Exception as exc:
+                report["errors"].append({"file": str(path), "stage": "close_workbook",
+                                         "error": f"{type(exc).__name__}: {exc}"})
+        if legacy_tables is not None and unread_sheets:
+            report["errors"].append({"file": str(path), "stage": "write_excel",
+                                     "error": f"未另存 xlsx，避免遺漏讀取失敗的工作表：{'、'.join(unread_sheets)}"})
+            continue
+        if statuses:
+            try:
                 if progress:
                     progress(f"正在寫入 Excel 比對結果：{path.name}")
                 output = _write_excel_statuses(path, statuses, legacy_tables=legacy_tables)
                 report["excel_outputs"].append({"source": str(path), "output": str(output)})
                 if progress:
                     progress(f"已儲存 Excel 比對結果：{output}")
-        except Exception as exc:
-            report["errors"].append({"file": str(path), "error": f"{type(exc).__name__}: {exc}"})
+            except Exception as exc:
+                report["errors"].append({"file": str(path), "stage": "write_excel",
+                                         "error": f"{type(exc).__name__}: {exc}"})
     return ComparisonReport.model_validate(report).to_dict()
+
+
+def _compare_sheet(table, path: Path, sheet: str, index: dict) -> tuple:
+    """工作表結果獨立收集；單列失敗不影響後續列。"""
+    header = next((i for i, row in table.iterrows()
+                   if IDENTITY_COLUMNS <= {_text(x) for x in row}), None)
+    if header is None:
+        raise ValueError("找不到裁判案號及姓名標題列")
+    columns = {}
+    for i, name in enumerate(table.iloc[header]):
+        columns.setdefault(_text(name), i)
+    columns.pop("status", None)
+    sheet_report = {"file": str(path), "sheet": sheet,
+                    "uncompared_columns": [c for c in columns if c and c not in FIELD_MAP and c not in IDENTITY_COLUMNS]}
+    rows, errors, statuses = [], [], {}
+    for i in range(header + 1, len(table)):
+        context = {"excel": str(path), "sheet": sheet, "row": i + 1}
+        try:
+            row = {name: table.iat[i, col] for name, col in columns.items() if name}
+            if all(_blank(x) for x in row.values()):
+                continue
+            context["name"] = _text(row.get("姓名"))
+            context.update(_compare_row(row, index))
+        except Exception as exc:
+            errors.append({"file": str(path), "sheet": sheet, "row": i + 1, "stage": "compare_row",
+                           "error": f"{type(exc).__name__}: {exc}"})
+            context = {"excel": str(path), "sheet": sheet, "row": i + 1,
+                       "status": "unmatched", "reason": f"{type(exc).__name__}: {exc}"}
+        try:
+            context = ComparisonResult.model_validate(context).model_dump(
+                mode="json", by_alias=True, exclude_unset=True,
+            )
+        except ValidationError as exc:
+            errors.append({"file": str(path), "sheet": sheet, "row": i + 1, "stage": "validate_result",
+                           "error": f"{type(exc).__name__}: {exc}"})
+            continue
+        rows.append(context)
+        statuses[i + 1] = context["reason"] if context["status"] == "unmatched" else context["status"]
+    return rows, sheet_report, (header + 1, statuses), errors
 
 
 def _write_excel_statuses(path: Path, statuses: dict, *, legacy_tables=None) -> Path:
@@ -197,8 +243,7 @@ def _compare_row(row: dict, index: dict[CaseNumber, list[tuple[Path, JudgmentAna
         try:
             defendants = [d for d in data.defendants if _matches_defendant_name(row["姓名"], d.name)]
             if len(defendants) != 1:
-                results.append({**context, "status": "unmatched",
-                        "reason": "被告姓名無法唯一配對"})
+                results.append({**context, "status": "unmatched", "reason": "被告姓名無法唯一配對"})
                 continue
             defendant = defendants[0]
 
@@ -218,11 +263,11 @@ def _compare_row(row: dict, index: dict[CaseNumber, list[tuple[Path, JudgmentAna
                 "is_accessory": values.get("is_accessory", False),
             })
             candidates = [(crime, law) for crime in defendant.crimes
-                          if crime.crime_id in guilty_crime_ids for law in (crime.laws or [])
-                          if _matches_candidate(values, crime, excel_law, law)]
+                          if crime.crime_id in guilty_crime_ids for law in (crime.laws or [])]
+            candidates, reason = _filter_candidates(values, candidates, excel_law)
             if not candidates:
                 results.append({**context, "status": "unmatched",
-                        "reason": "法條／刑度無符合候選", "candidate_crime_ids": []})
+                        "reason": reason, "candidate_crime_ids": []})
                 continue
             # 多個符合候選也視為定位成功，保留全部候選 ID；累犯由被告資料比較。
             context["candidate_crime_ids"] = list(dict.fromkeys(c.crime_id for c, _ in candidates))
@@ -237,7 +282,7 @@ def _compare_row(row: dict, index: dict[CaseNumber, list[tuple[Path, JudgmentAna
     matched = [result for result in results if result["status"] == "equal"]
     if not matched:
         return {**base, "status": "unmatched",
-                "reason": "所有判決均無符合候選，詳見各判決結果", "candidate_crime_ids": [],
+                "reason": "；".join(dict.fromkeys(r["reason"] for r in results)), "candidate_crime_ids": [],
                 "document_results": results}
 
     # 同案號只要有一份完全符合，就視為配對成功；保留每份判決的結果供查閱。
@@ -248,17 +293,26 @@ def _compare_row(row: dict, index: dict[CaseNumber, list[tuple[Path, JudgmentAna
             "document_results": results}
 
 
-def _matches_candidate(values: dict, crime: CrimeAnalysis, excel_law: LawReference,
-                       json_law: LawReference) -> bool:
-    """以轉換後的 Excel 欄位定位，刑度固定使用 CrimeAnalysis 的各罪宣告刑。"""
-    if excel_law != json_law:
-        return False
-    for field, expected in values.items():
-        if field not in PENALTIES:
-            continue
-        if expected != getattr(crime, field):
-            return False
-    return True
+def _filter_candidates(values: dict, candidates: list[tuple[CrimeAnalysis, LawReference]],
+                       excel_law: LawReference) -> tuple[list[tuple[CrimeAnalysis, LawReference]], str | None]:
+    """依序縮小同一批候選，回報第一個無法通過的條件。"""
+    law_fields = LAW_FIELDS - {"is_attempted", "is_accessory"}
+    candidates = [(crime, law) for crime, law in candidates
+                  if all(getattr(excel_law, field) == getattr(law, field) for field in law_fields)]
+    if not candidates:
+        return [], "法條不合"
+    for field, reason in (("is_attempted", "未遂不合"), ("is_accessory", "幫助犯不合")):
+        candidates = [(crime, law) for crime, law in candidates
+                      if getattr(excel_law, field) == getattr(law, field)]
+        if not candidates:
+            return [], reason
+    for fields, reason in (({"crime_jsst"}, "裁判情形不合"),
+                           (PENALTIES - {"crime_jsst"}, "刑度不合")):
+        candidates = [(crime, law) for crime, law in candidates
+                      if all(values[field] == getattr(crime, field) for field in fields if field in values)]
+        if not candidates:
+            return [], reason
+    return candidates, None
 
 
 def _matches_defendant_name(excel_name: str, json_name: str) -> bool:
@@ -280,25 +334,34 @@ def _matches_defendant_name(excel_name: str, json_name: str) -> bool:
 def _excel_col_to_val(column: str, value):
     text = _text(value)
     if column in {"未遂", "幫助", "累犯"}:
-        if text in {"", "0", "0.0", "否", "N", "false"}:
-            return False
-        if text in {"1", "1.0", "是", "Y", "true", "✓"}:
-            return True
-        raise ValueError(f"{column}布林值無法辨識：{text}")
+        bool_values = {
+            "": False, "0": False, "0.0": False,
+            "否": False, "n": False, "false": False,
+            "1": True, "1.0": True,
+            "是": True, "y": True, "true": True, "✓": True,
+        }
+        try:
+            return bool_values[text.lower()]
+        except KeyError:
+            raise ValueError(f"{column}布林值無法辨識：{text}") from None
     if not text or text.lower() == "x":
         return None
-    if column in {"案由", "裁判情形"}:
+    if column in {"裁判情形", "案由"}:
         return text
     if column in {"條段", "項段"}:
         return text.upper()
+
     number = _integer(value)
-    if column in {"徒刑(YYMM)", "拘役", "罰金", "併科罰金"} and number == 0:
-        return None
     if column == "徒刑(YYMM)":
+        if number == 0:
+            return None
         years, months = divmod(number, 100)
         if months >= 12:
             raise ValueError(f"YYMM 月份不合法：{value}")
         return years * 12 + months
+    if number == 0 and column in {"拘役", "罰金", "併科罰金"}:
+        return None
+
     return number
 
 

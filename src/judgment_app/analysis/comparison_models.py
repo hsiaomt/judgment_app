@@ -46,6 +46,8 @@ class ReportError(BaseModel):
     error: NonBlankText
     file: str | None = None
     sheet: str | None = None
+    row: PositiveInt | None = None
+    stage: str | None = None
 
 
 class SheetReport(BaseModel):
