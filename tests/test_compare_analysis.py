@@ -37,7 +37,16 @@ class CompareAnalysisTests(unittest.TestCase):
         self.source.write_text(json.dumps(self.data), encoding='utf-8')
         with pd.ExcelWriter(self.excel) as writer:
             pd.DataFrame([self.row]).to_excel(writer, index=False, startrow=2)
-        return compare_files(self.excel, self.root)['rows'][0]
+        result = compare_files(self.excel, self.root)['rows'][0]
+        for item in [result, *result.get('document_results', [])]:
+            self.assertIn(item['status'], {'equal', 'unmatched'})
+            self.assertNotIn('differences', item)
+            self.assertNotIn('uncomparable', item)
+            if item['status'] == 'unmatched':
+                self.assertTrue(item['reason'])
+            else:
+                self.assertNotIn('reason', item)
+        return result
 
     def test_equal_after_unit_and_null_normalization(self):
         result = self.run_report()
@@ -76,13 +85,12 @@ class CompareAnalysisTests(unittest.TestCase):
         self.assertEqual(len(report['errors']), 1)
         self.assertIn('crimes', report['errors'][0]['error'])
 
-    def test_difference_preserves_values(self):
+    def test_recidivist_mismatch_preserves_reason_and_candidates(self):
         self.row['累犯'] = '是'
         result = self.run_report()
-        self.assertEqual(result['status'], 'different')
-        diff = result['differences'][0]
-        self.assertEqual(diff['excel_raw'], '是')
-        self.assertEqual((diff['excel_value'], diff['json_value']), (True, False))
+        self.assertEqual(result['status'], 'unmatched')
+        self.assertEqual(result['reason'], '累犯不合')
+        self.assertEqual(result['candidate_crime_ids'], [1])
 
     def test_excel_law_name_normalization(self):
         for raw, expected in (
@@ -134,7 +142,7 @@ class CompareAnalysisTests(unittest.TestCase):
         for value in (None, 'x'):
             with self.subTest(value=value):
                 self.row['案由'] = value
-                self.assertEqual(self.run_report()['status'], 'invalid')
+                self.assertEqual(self.run_report()['status'], 'unmatched')
 
     def test_omitted_optional_law_fields_default_to_none(self):
         del self.row['之']
@@ -146,17 +154,20 @@ class CompareAnalysisTests(unittest.TestCase):
         (self.root / '另一份.analysis.json').write_text(json.dumps(self.data))
         self.assertEqual(self.run_report()['status'], 'equal')
 
-    def test_multiple_documents_keep_all_differences_with_sources(self):
+    def test_multiple_documents_accept_any_equal_and_keep_other_reasons(self):
         self.run_report()
         other = deepcopy(self.data)
         other['defendants'][0]['is_recidivist'] = True
         second = self.root / '另一份.analysis.json'
         second.write_text(json.dumps(other))
         result = self.run_report()
-        self.assertEqual(result['status'], 'different')
-        self.assertEqual(len(result['matched_candidates']), 2)
-        self.assertEqual(result['differences'][0]['json'], str(second))
+        self.assertEqual(result['status'], 'equal')
+        self.assertNotIn('reason', result)
+        self.assertEqual(len(result['matched_candidates']), 1)
+        self.assertEqual(result['matched_candidates'][0]['json'], str(self.source))
         self.assertEqual(len(result['document_results']), 2)
+        failed = next(r for r in result['document_results'] if r['json'] == str(second))
+        self.assertEqual((failed['status'], failed['reason']), ('unmatched', '累犯不合'))
 
     def test_search_continues_past_unmatched_or_invalid_document(self):
         for other in ({**self.data, 'defendants': []}, {**self.data, 'defendants': [{}]}):
@@ -257,22 +268,23 @@ class CompareAnalysisTests(unittest.TestCase):
         result = self.run_report()
         self.assertEqual(result['status'], 'equal')
         self.assertIn(1, result['candidate_crime_ids'])
-        self.assertEqual(result['differences'], [])
+        self.assertNotIn('differences', result)
 
-    def test_excel_guilty_status_is_not_compared(self):
+    def test_excel_judgment_status_selects_matching_crime(self):
         for value in ('無罪', '科刑', None, '其他'):
             with self.subTest(value=value):
                 self.row['裁判情形'] = value
-                self.assertEqual(self.run_report()['status'], 'equal')
+                expected = 'equal' if value == '科刑' else 'unmatched'
+                self.assertEqual(self.run_report()['status'], expected)
         report = compare_files(self.excel, self.root)
-        self.assertIn('裁判情形', report['sheets'][0]['uncompared_columns'])
+        self.assertNotIn('裁判情形', report['sheets'][0]['uncompared_columns'])
 
     def test_multiple_guilty_groups_do_not_require_unique_group(self):
         groups = self.data['defendants'][0]['execution_groups']
         groups.append(deepcopy(groups[0]))
         result = self.run_report()
         self.assertEqual(result['status'], 'equal')
-        self.assertEqual(result['uncomparable'], [])
+        self.assertNotIn('uncomparable', result)
 
     def test_no_guilty_group_is_unmatched(self):
         defendant = self.data['defendants'][0]
@@ -335,8 +347,8 @@ class CompareAnalysisTests(unittest.TestCase):
     def test_recidivist_is_compared_after_candidate_selection(self):
         self.row['累犯'] = '是'
         result = self.run_report()
-        self.assertEqual(result['status'], 'different')
-        self.assertEqual(result['differences'][0]['field'], 'is_recidivist')
+        self.assertEqual(result['status'], 'unmatched')
+        self.assertEqual(result['reason'], '累犯不合')
 
     def test_attempt_and_accessory_are_location_conditions(self):
         law = self.data['defendants'][0]['crimes'][0]['laws'][0]
@@ -395,13 +407,14 @@ class CompareAnalysisTests(unittest.TestCase):
         defendant['execution_groups'][0]['executed_jsst'] = '免刑'
         defendant['execution_groups'][0]['executed_penalty'] = None
         defendant['crimes'][0]['crime_jsst'] = '免刑'
+        self.row['裁判情形'] = '免刑'
         defendant['crimes'][0]['penalty'] = None
         self.row['徒刑(YYMM)'] = 0
         self.assertEqual(self.run_report()['status'], 'equal')
 
     def test_invalid_month_is_reported(self):
         self.row['徒刑(YYMM)'] = 499
-        self.assertEqual(self.run_report()['status'], 'invalid')
+        self.assertEqual(self.run_report()['status'], 'unmatched')
 
     def test_date_does_not_disambiguate_same_case(self):
         self.run_report()

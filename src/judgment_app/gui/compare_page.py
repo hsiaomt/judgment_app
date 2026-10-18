@@ -92,10 +92,12 @@ class ComparePage(TaskPage):
         rows = [row for row in report["rows"] if row["status"] != "equal"]
         action = "報告匯入完成" if kind == "import_report" else "比對完成"
         summary = (f"{action}：共 {report['summary']['total']} 列，equal {report['summary'].get('equal', 0)} 列，"
-                   f"非 equal {len(rows)} 列，讀取錯誤 {len(report['errors'])} 項。")
+                   f"非 equal {len(rows)} 列，錯誤 {len(report['errors'])} 項。")
         self.status.set(summary)
         self.append_log(summary)
         self.append_log(f"比對報告：{destination}")
+        for output in report.get("excel_outputs", []):
+            self.append_log(f"Excel 比對結果：{output['output']}")
         for error in report["errors"]:
             self.append_log(json.dumps(error, ensure_ascii=False))
         self.render_comparison(rows, report["errors"])

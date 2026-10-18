@@ -94,7 +94,7 @@ class JudgmentAnalysis:
 @dataclass
 class DefendantAnalysis:
     name: str = field(metadata={"description": "被告姓名，若為英文或外籍姓名請保留原文"})
-    is_recidivist: bool = field(metadata={"description": "是否累犯"})
+    is_recidivist: bool = field(metadata={"description": "是否累犯，判決內容有說明為累犯但沒有加重刑度仍為true"})
     is_pros_appeal: bool | None = described("二審上訴人是否有檢察署；一審則為null")
     appeal_result: str | None = described("上訴結果；一審為null")
     probation: int | None = described("緩刑年數")
@@ -103,14 +103,14 @@ class DefendantAnalysis:
         "依目標判決明示的罪數及最終論罪結論整理罪名清單，保存各罪宣告刑，不以應執行刑回填。"
         "想像競合或其他從一重處斷只列實際論處的罪名；被吸收或不另論罪的部分不另列。"
         "不得自行推測何罪較重；獨立論罪仍分別保留，數罪併罰或合併定應執行刑不代表一罪。"
-        "無罪仍列被訴罪名與法條；不另為無罪諭知不得視為不另論罪。"
-        "免訴、不受理的罪名仍列被訴罪名與次數，is_attempted、is_accessory、laws、刑度與折算標準為null。"
+        "無罪仍列被訴罪名與法條、次數，單罪刑度與折算標準為null；不另為無罪諭知的部分不輸出。"
+        "免訴、不受理的罪名仍列被訴罪名與次數，laws、單罪刑度與折算標準為null。"
     )})
     execution_groups: list["ExecutionGroup"] = field(kw_only=True, metadata={"description": (
         "應執行刑分組，每組保存對應罪、應執行刑度及折算標準。"
         "有定應執行刑則依判決記載分組，不得推測罪與組的對應關係，應執行刑直接擷取所定刑度。"
         "未定刑的罪依不同易科罰金、易服勞役標準分組，僅這些組以刑期乘times後加總。"
-        "無罪、免訴、不受理各自建一個組，刑度與折算標準為null。"
+        "無罪、免訴、不受理各自建一個組，應執行刑度與折算標準為null。"
     )})
     confiscation: list[str] | None = described("沒收物品清單；金額以『幣種+數值+元』格式儲存")
 

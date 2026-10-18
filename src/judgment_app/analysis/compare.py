@@ -5,8 +5,10 @@ from collections import Counter
 import json
 from pathlib import Path
 import re
+from tempfile import NamedTemporaryFile
 
 import pandas as pd
+from openpyxl import Workbook, load_workbook
 
 from judgment_app.analysis.models import CrimeAnalysis, JudgmentAnalysis, LawReference
 from judgment_app.case_number import CaseNumber
@@ -38,6 +40,8 @@ def main() -> None:
     destination.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(report["summary"], ensure_ascii=False))
     print(f"比對報告：{destination}")
+    for output in report["excel_outputs"]:
+        print(f"Excel 比對結果：{output['output']}")
 
 
 def load_comparison_report(path: str | Path) -> dict:
@@ -69,7 +73,7 @@ def load_comparison_report(path: str | Path) -> dict:
 
 
 def compare_to_report(excel_path: Path, json_path: Path, destination: Path, *, progress=None) -> dict:
-    """使用既有比對流程並儲存完整報告，不覆寫來源檔案。"""
+    """比對並回寫 Excel status，另存完整 JSON 報告。"""
     destination = resolve_output_path(destination).resolve()
     for source in (Path(excel_path), Path(json_path)):
         if source.is_file() and source.resolve() == destination:
@@ -89,23 +93,29 @@ def compare_to_report(excel_path: Path, json_path: Path, destination: Path, *, p
 
 
 def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
-    """回傳每列差異、未配對原因及未比較欄位，不修改來源資料。"""
-    report = {"rows": [], "errors": [], "sheets": []}
+    """回傳每列差異、未配對原因及未比較欄位，並將 status 寫入 Excel。"""
+    report = {"rows": [], "errors": [], "sheets": [], "excel_outputs": []}
     if progress:
         progress("正在讀取分析 JSON…")
     index = _load_analyses(Path(json_path), report["errors"])
     files = _files(Path(excel_path), {".xls", ".xlsx"})
+    if Path(excel_path).is_dir():
+        files = [p for p in files if not re.search(r"\.status(?:-\d+)?\.xlsx$", p.name, re.IGNORECASE)]
     if not files:
         raise ValueError(f"找不到 Excel：{excel_path}")
     for file_index, path in enumerate(files, 1):
         if progress:
             progress(f"正在比對 Excel {file_index} / {len(files)}：{path.name}")
         try:
+            statuses = {}
+            legacy_tables = {} if path.suffix.lower() == ".xls" else None
             with pd.ExcelFile(path) as book:
                 for sheet in book.sheet_names:
                     if progress:
                         progress(f"正在比對 {path.name}／{sheet}")
                     table = book.parse(sheet, header=None, dtype=object)
+                    if legacy_tables is not None:
+                        legacy_tables[sheet] = table
                     header = next((i for i, row in table.iterrows()
                                    if IDENTITY_COLUMNS <= {_text(x) for x in row}), None)
                     if header is None:
@@ -114,6 +124,10 @@ def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
                     columns = {}
                     for i, name in enumerate(table.iloc[header]):
                         columns.setdefault(_text(name), i)
+                    # status 是前次比對的輸出，不參與欄位比對或空白列判斷。
+                    columns.pop("status", None)
+                    sheet_statuses = {}
+                    statuses[sheet] = (header + 1, sheet_statuses)
                     report["sheets"].append({"file": str(path), "sheet": sheet,
                         "uncompared_columns": [c for c in columns if c and c not in FIELD_MAP and c not in IDENTITY_COLUMNS]})
                     for i in range(header + 1, len(table)):
@@ -124,8 +138,16 @@ def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
                         try:
                             context.update(_compare_row(row, index))
                         except (ValueError, TypeError, KeyError) as exc:
-                            context.update(status="invalid", reason=str(exc))
+                            context.update(status="unmatched", reason=str(exc))
                         report["rows"].append(context)
+                        sheet_statuses[i + 1] = context["status"]
+            if statuses:
+                if progress:
+                    progress(f"正在寫入 Excel 比對結果：{path.name}")
+                output = _write_excel_statuses(path, statuses, legacy_tables=legacy_tables)
+                report["excel_outputs"].append({"source": str(path), "output": str(output)})
+                if progress:
+                    progress(f"已儲存 Excel 比對結果：{output}")
         except Exception as exc:
             report["errors"].append({"file": str(path), "error": f"{type(exc).__name__}: {exc}"})
     report["summary"] = dict(Counter(row["status"] for row in report["rows"]))
@@ -133,13 +155,58 @@ def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
     return report
 
 
+def _write_excel_statuses(path: Path, statuses: dict, *, legacy_tables=None) -> Path:
+    """xlsx 原檔回寫；xls 以讀取的表格另存 xlsx，不覆寫既有結果檔。"""
+    destination = path
+    if legacy_tables is None:
+        workbook = load_workbook(path)
+    else:
+        destination = path.with_name(f"{path.stem}.status.xlsx")
+        number = 2
+        while destination.exists():
+            destination = path.with_name(f"{path.stem}.status-{number}.xlsx")
+            number += 1
+        workbook = Workbook()
+        workbook.remove(workbook.active)
+    temporary = None
+    try:
+        if legacy_tables is not None:
+            for sheet, table in legacy_tables.items():
+                worksheet = workbook.create_sheet(sheet)
+                for row_number, row in enumerate(table.itertuples(index=False, name=None), 1):
+                    for column, value in enumerate(row, 1):
+                        if not pd.isna(value):
+                            cell = worksheet.cell(row_number, column, value)
+                            if isinstance(value, str):
+                                cell.data_type = "s"
+        for sheet, (header, row_statuses) in statuses.items():
+            worksheet = workbook[sheet]
+            column = next((cell.column for cell in worksheet[header]
+                           if _text(cell.value) == "status"), worksheet.max_column + 1)
+            worksheet.cell(header, column, "status")
+            for row_number in range(header + 1, worksheet.max_row + 1):
+                worksheet.cell(row_number, column).value = row_statuses.get(row_number)
+        with NamedTemporaryFile(dir=path.parent, prefix="~$status-", suffix=".xlsx", delete=False) as file:
+            temporary = Path(file.name)
+        workbook.save(temporary)
+        temporary.replace(destination)
+        return destination
+    finally:
+        workbook.close()
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
 def _compare_row(row: dict, index: dict[CaseNumber, list[tuple[Path, JudgmentAnalysis]]]) -> dict:
-    case = CaseNumber(_text(row["裁判機關"]), _integer(row["裁判年度"]),
-                      _text(row["裁判冠字"]), _integer(row["裁判號數"]))
+    try:
+        case = CaseNumber(_text(row["裁判機關"]), _integer(row["裁判年度"]),
+                          _text(row["裁判冠字"]), _integer(row["裁判號數"]))
+    except (ValueError, TypeError, KeyError) as exc:
+        return {"status": "unmatched", "reason": str(exc)}
     base = {"case_number": case.to_string()}
     documents = index.get(case, [])
     if not documents:
-        return {**base, "status": "unmatched", "reason": "判決不存在", "candidates": []}
+        return {**base, "status": "unmatched", "reason": "判決不存在"}
     results = []
     for source, data in documents:
         context = {**base, "json": str(source)}
@@ -154,8 +221,7 @@ def _compare_row(row: dict, index: dict[CaseNumber, list[tuple[Path, JudgmentAna
             # 只比對有罪的 group，若無則視為無法配對。
             guilty_groups = [g for g in defendant.execution_groups if g.executed_jsst in {"科刑", "免刑"}]
             if not guilty_groups:
-                results.append({**context, "status": "unmatched", "reason": "找不到有罪的 group",
-                        "candidate_crime_ids": []})
+                results.append({**context, "status": "unmatched", "reason": "找不到有罪的 group"})
                 continue
             guilty_crime_ids = {crime_id for g in guilty_groups for crime_id in g.crime_ids}
 
@@ -176,29 +242,22 @@ def _compare_row(row: dict, index: dict[CaseNumber, list[tuple[Path, JudgmentAna
                 continue
             # 多個符合候選也視為定位成功，保留全部候選 ID；累犯由被告資料比較。
             context["candidate_crime_ids"] = list(dict.fromkeys(c.crime_id for c, _ in candidates))
-            differences, uncomparable = [], []
             if "is_recidivist" in values and values["is_recidivist"] != defendant.is_recidivist:
-                differences.append({
-                    "column": "累犯", "field": "is_recidivist",
-                    "excel_raw": _text(row["累犯"]),
-                    "excel_value": values["is_recidivist"],
-                    "json_value": defendant.is_recidivist,
-                })
-            results.append({**context, "status": "different" if differences else "incomplete" if uncomparable else "equal",
-                    "differences": differences, "uncomparable": uncomparable})
+                results.append({**context, "status": "unmatched", "reason": "累犯不合"})
+            else:
+                results.append({**context, "status": "equal"})
         except (ValueError, TypeError, KeyError) as exc:
-            results.append({**context, "status": "invalid", "reason": str(exc)})
+            results.append({**context, "status": "unmatched", "reason": str(exc)})
     if len(results) == 1:
         return results[0]
-    matched = [result for result in results if result["status"] in {"equal", "different", "incomplete"}]
+    matched = [result for result in results if result["status"] == "equal"]
     if not matched:
-        return {**base, "status": "invalid" if any(r["status"] == "invalid" for r in results) else "unmatched",
+        return {**base, "status": "unmatched",
                 "reason": "所有判決均無符合候選，詳見各判決結果", "candidate_crime_ids": [],
                 "document_results": results}
-    differences = [{**diff, "json": result["json"]} for result in matched for diff in result["differences"]]
-    uncomparable = [{**item, "json": result["json"]} for result in matched for item in result["uncomparable"]]
-    return {**base, "status": "different" if differences else "incomplete" if uncomparable else "equal",
-            "differences": differences, "uncomparable": uncomparable,
+
+    # 同案號只要有一份完全符合，就視為配對成功；保留每份判決的結果供查閱。
+    return {**base, "status": "equal",
             "candidate_crime_ids": list(dict.fromkeys(cid for result in matched for cid in result["candidate_crime_ids"])),
             "matched_candidates": [{"json": result["json"], "crime_id": cid}
                                    for result in matched for cid in result["candidate_crime_ids"]],
