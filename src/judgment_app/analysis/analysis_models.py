@@ -135,8 +135,8 @@ class ExecutionGroup(AnalysisModel):
     executed_detention_to_fine: PositiveInt | None = Field(default=None, description="應執行拘役易科罰金每一日折算金額(元)")
     executed_fine: PositiveInt | None = Field(default=None, description="應執行罰金金額(元)")
     executed_fine_to_detention: PositiveInt | None = Field(default=None, description="應執行罰金易服勞役每一日折算金額(元)")
-    executed_addition_fine: PositiveInt | None = Field(default=None, description="應執行併科罰金金額(元)")
-    executed_addition_fine_to_detention: PositiveInt | None = Field(default=None, description="應執行併科罰金易服勞役每一日折算金額(元)")
+    #executed_addition_fine: PositiveInt | None = Field(default=None, description="應執行併科罰金金額(元)")
+    #executed_addition_fine_to_detention: PositiveInt | None = Field(default=None, description="應執行併科罰金易服勞役每一日折算金額(元)")
 
     @field_validator("crime_ids")
     @classmethod
@@ -168,8 +168,8 @@ class CrimeAnalysis(AnalysisModel):
     detention_to_fine: PositiveInt | None = Field(default=None, description="拘役易科罰金每一日折算金額(元)")
     fine: PositiveInt | None = Field(default=None, description="罰金金額(元)")
     fine_to_detention: PositiveInt | None = Field(default=None, description="罰金易服勞役每一日折算金額(元)")
-    addition_fine: PositiveInt | None = Field(default=None, description="併科罰金金額(元)")
-    addition_fine_to_detention: PositiveInt | None = Field(default=None, description="併科罰金易服勞役每一日折算金額(元)")
+    #addition_fine: PositiveInt | None = Field(default=None, description="併科罰金金額(元)")
+    #addition_fine_to_detention: PositiveInt | None = Field(default=None, description="併科罰金易服勞役每一日折算金額(元)")
 
 
 class LawReference(AnalysisModel):
