@@ -4,14 +4,16 @@ import argparse
 import json
 from pathlib import Path
 import re
-from tempfile import NamedTemporaryFile
 
 import pandas as pd
-from openpyxl import Workbook, load_workbook
 from pydantic import ValidationError
 
 from judgment_app.analysis.comparison_models import ComparisonReport, ComparisonResult
 from judgment_app.analysis.analysis_models import CrimeAnalysis, JudgmentAnalysis, LawReference
+from judgment_app.analysis.compare_common import (
+    IDENTITY_COLUMNS, _is_blank, excel_col_to_val, find_files, _non_negative_integer,
+    load_analyses, matches_defendant_name, _text, write_excel_statuses,
+)
 from judgment_app.case_number import CaseNumber
 from judgment_app.paths import resolve_output_path
 
@@ -23,7 +25,6 @@ FIELD_MAP = {
     "項": "paragraph", "項段": "paragraph_part", "款": "paragraph_sub",
     "未遂": "is_attempted", "幫助": "is_accessory",
 }
-IDENTITY_COLUMNS = {"裁判機關", "裁判年度", "裁判冠字", "裁判號數", "姓名"}
 LAW_FIELDS = {"law_name", "article", "article_sub", "article_part", "paragraph", "paragraph_part", "paragraph_sub", "is_attempted", "is_accessory"}
 PENALTIES = {"crime_jsst", "penalty", "detention", "fine"}
 
@@ -56,7 +57,7 @@ def load_comparison_report(path: str | Path) -> dict:
 
 
 def compare_to_report(excel_path: Path, json_path: Path, destination: Path, *, progress=None) -> dict:
-    """比對並回寫 Excel status，另存完整 JSON 報告。"""
+    """比對並回寫 Excel status、reason，另存完整 JSON 報告。"""
     destination = resolve_output_path(destination).resolve()
     for source in (Path(excel_path), Path(json_path)):
         if source.is_file() and source.resolve() == destination:
@@ -76,12 +77,12 @@ def compare_to_report(excel_path: Path, json_path: Path, destination: Path, *, p
 
 
 def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
-    """回傳每列差異、未配對原因及未比較欄位，並將 status 寫入 Excel。"""
+    """回傳每列差異、未配對原因及未比較欄位，並將 status、reason 寫入 Excel。"""
     report = {"rows": [], "errors": [], "sheets": [], "excel_outputs": []}
     if progress:
         progress("正在讀取分析 JSON…")
-    index = _load_analyses(Path(json_path), report["errors"])
-    files = _files(Path(excel_path), {".xls", ".xlsx"})
+    index = load_analyses(Path(json_path), report["errors"])
+    files = find_files(Path(excel_path), {".xls", ".xlsx"})
     if Path(excel_path).is_dir():
         files = [p for p in files if not re.search(r"\.status(?:-\d+)?\.xlsx$", p.name, re.IGNORECASE)]
     if not files:
@@ -136,7 +137,7 @@ def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
             try:
                 if progress:
                     progress(f"正在寫入 Excel 比對結果：{path.name}")
-                output = _write_excel_statuses(path, statuses, legacy_tables=legacy_tables)
+                output = write_excel_statuses(path, statuses, legacy_tables=legacy_tables)
                 report["excel_outputs"].append({"source": str(path), "output": str(output)})
                 if progress:
                     progress(f"已儲存 Excel 比對結果：{output}")
@@ -156,6 +157,7 @@ def _compare_sheet(table, path: Path, sheet: str, index: dict) -> tuple:
     for i, name in enumerate(table.iloc[header]):
         columns.setdefault(_text(name), i)
     columns.pop("status", None)
+    columns.pop("reason", None)
     sheet_report = {"file": str(path), "sheet": sheet,
                     "uncompared_columns": [c for c in columns if c and c not in FIELD_MAP and c not in IDENTITY_COLUMNS]}
     rows, errors, statuses = [], [], {}
@@ -163,7 +165,7 @@ def _compare_sheet(table, path: Path, sheet: str, index: dict) -> tuple:
         context = {"excel": str(path), "sheet": sheet, "row": i + 1}
         try:
             row = {name: table.iat[i, col] for name, col in columns.items() if name}
-            if all(_blank(x) for x in row.values()):
+            if all(_is_blank(x) for x in row.values()):
                 continue
             context["name"] = _text(row.get("姓名"))
             context.update(_compare_row(row, index))
@@ -181,67 +183,25 @@ def _compare_sheet(table, path: Path, sheet: str, index: dict) -> tuple:
                            "error": f"{type(exc).__name__}: {exc}"})
             continue
         rows.append(context)
-        statuses[i + 1] = context["reason"] if context["status"] == "unmatched" else context["status"]
+        statuses[i + 1] = {"status": context["status"], "reason": context.get("reason")}
     return rows, sheet_report, (header + 1, statuses), errors
-
-
-def _write_excel_statuses(path: Path, statuses: dict, *, legacy_tables=None) -> Path:
-    """xlsx 原檔回寫；xls 以讀取的表格另存 xlsx，不覆寫既有結果檔。"""
-    destination = path
-    if legacy_tables is None:
-        workbook = load_workbook(path)
-    else:
-        destination = path.with_name(f"{path.stem}.status.xlsx")
-        number = 2
-        while destination.exists():
-            destination = path.with_name(f"{path.stem}.status-{number}.xlsx")
-            number += 1
-        workbook = Workbook()
-        workbook.remove(workbook.active)
-    temporary = None
-    try:
-        if legacy_tables is not None:
-            for sheet, table in legacy_tables.items():
-                worksheet = workbook.create_sheet(sheet)
-                for row_number, row in enumerate(table.itertuples(index=False, name=None), 1):
-                    for column, value in enumerate(row, 1):
-                        if not pd.isna(value):
-                            cell = worksheet.cell(row_number, column, value)
-                            if isinstance(value, str):
-                                cell.data_type = "s"
-        for sheet, (header, row_statuses) in statuses.items():
-            worksheet = workbook[sheet]
-            column = next((cell.column for cell in worksheet[header]
-                           if _text(cell.value) == "status"), worksheet.max_column + 1)
-            worksheet.cell(header, column, "status")
-            for row_number in range(header + 1, worksheet.max_row + 1):
-                worksheet.cell(row_number, column).value = row_statuses.get(row_number)
-        with NamedTemporaryFile(dir=path.parent, prefix="~$status-", suffix=".xlsx", delete=False) as file:
-            temporary = Path(file.name)
-        workbook.save(temporary)
-        temporary.replace(destination)
-        return destination
-    finally:
-        workbook.close()
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
 
 
 def _compare_row(row: dict, index: dict[CaseNumber, list[tuple[Path, JudgmentAnalysis]]]) -> dict:
     try:
-        case = CaseNumber(_text(row["裁判機關"]), _integer(row["裁判年度"]),
-                          _text(row["裁判冠字"]), _integer(row["裁判號數"]))
+        case = CaseNumber(_text(row["裁判機關"]), _non_negative_integer(row["裁判年度"]),
+                          _text(row["裁判冠字"]), _non_negative_integer(row["裁判號數"]))
     except (ValueError, TypeError, KeyError) as exc:
         return {"status": "unmatched", "reason": str(exc)}
     base = {"case_number": case.to_string()}
     documents = index.get(case, [])
     if not documents:
-        return {**base, "status": "unmatched", "reason": "判決不存在"}
+        return {**base, "status": "judgment_not_found", "reason": "判決不存在"}
     results = []
     for source, data in documents:
         context = {**base, "json": str(source)}
         try:
-            defendants = [d for d in data.defendants if _matches_defendant_name(row["姓名"], d.name)]
+            defendants = [d for d in data.defendants if matches_defendant_name(row["姓名"], d.name)]
             if len(defendants) != 1:
                 results.append({**context, "status": "unmatched", "reason": "被告姓名無法唯一配對"})
                 continue
@@ -255,12 +215,10 @@ def _compare_row(row: dict, index: dict[CaseNumber, list[tuple[Path, JudgmentAna
             guilty_crime_ids = {crime_id for g in guilty_groups for crime_id in g.crime_ids}
 
             # 每列只轉換一次；所有候選均依法條及各罪刑度定位。
-            values = {field: _excel_col_to_val(column, row[column])
+            values = {field: excel_col_to_val(column, row[column])
                       for column, field in FIELD_MAP.items() if column in row}
             excel_law = LawReference(**{
-                **{field: values[field] for field in LAW_FIELDS if field in values},
-                "is_attempted": values.get("is_attempted", False),
-                "is_accessory": values.get("is_accessory", False),
+                field: values[field] for field in LAW_FIELDS if field in values
             })
             candidates = [(crime, law) for crime in defendant.crimes
                           if crime.crime_id in guilty_crime_ids for law in (crime.laws or [])]
@@ -313,95 +271,6 @@ def _filter_candidates(values: dict, candidates: list[tuple[CrimeAnalysis, LawRe
         if not candidates:
             return [], reason
     return candidates, None
-
-
-def _matches_defendant_name(excel_name: str, json_name: str) -> bool:
-    """遮蔽姓名依 ○ 前的中英文字配對、○ 數量不得大於實際長度；未遮蔽姓名維持完整比對。"""
-    excel_name = _text(excel_name)
-    json_name = _text(json_name)
-    if "○" not in excel_name:
-        return bool(excel_name) and excel_name == json_name
-    excel_prefix, separator, excel_suffix = excel_name.partition("○")
-    excel_suffix = separator + excel_suffix
-    if not re.fullmatch(r"[A-Za-z\u3400-\u9fff\U00020000-\U0002FA1F]+", excel_prefix):
-        return False
-    json_suffix = json_name.split(excel_prefix, 1)[1] if excel_prefix in json_name else ""
-    if len(excel_suffix) > len(json_suffix):
-        return False
-    return json_name.startswith(excel_prefix)
-
-
-def _excel_col_to_val(column: str, value):
-    text = _text(value)
-    if column in {"未遂", "幫助", "累犯"}:
-        bool_values = {
-            "": False, "0": False, "0.0": False,
-            "否": False, "n": False, "false": False,
-            "1": True, "1.0": True,
-            "是": True, "y": True, "true": True, "✓": True,
-        }
-        try:
-            return bool_values[text.lower()]
-        except KeyError:
-            raise ValueError(f"{column}布林值無法辨識：{text}") from None
-    if not text or text.lower() == "x":
-        return None
-    if column in {"裁判情形", "案由"}:
-        return text
-    if column in {"條段", "項段"}:
-        return text.upper()
-
-    number = _integer(value)
-    if column == "徒刑(YYMM)":
-        if number == 0:
-            return None
-        years, months = divmod(number, 100)
-        if months >= 12:
-            raise ValueError(f"YYMM 月份不合法：{value}")
-        return years * 12 + months
-    if number == 0 and column in {"拘役", "罰金", "併科罰金"}:
-        return None
-
-    return number
-
-
-def _load_analyses(path: Path, errors: list) -> dict[CaseNumber, list[tuple[Path, JudgmentAnalysis]]]:
-    index = {}
-    for source in _files(path, {".json"}):
-        try:
-            data = json.loads(source.read_text(encoding="utf-8-sig"))
-            if not isinstance(data, dict) or "case_number" not in data:
-                continue
-            analysis = JudgmentAnalysis.from_dict(data)
-            case_number = CaseNumber.from_string(analysis.case_number)
-            index.setdefault(case_number, []).append((source, analysis))
-        except (ValueError, TypeError, KeyError, OSError) as exc:
-            errors.append({"file": str(source), "error": f"{type(exc).__name__}: {exc}"})
-    return index
-
-
-def _files(path: Path, suffixes: set[str]) -> list[Path]:
-    if not path.exists():
-        raise ValueError(f"路徑不存在：{path}")
-    return sorted(p for p in ([path] if path.is_file() else path.rglob("*"))
-                  if p.is_file() and p.suffix.lower() in suffixes and not p.name.startswith("~$"))
-
-
-def _integer(value) -> int:
-    number = float(value)
-    if not number.is_integer() or number < 0:
-        raise ValueError(f"非負整數格式錯誤：{value}")
-    return int(number)
-
-
-def _text(value) -> str:
-    return "" if _blank(value) else re.sub(
-        r"\s+", "", str(value)).replace("（", "(").replace("）", ")"
-    )
-
-
-def _blank(value) -> bool:
-    return value is None or bool(pd.isna(value)) or str(value).strip() == ""
 
 
 if __name__ == "__main__":

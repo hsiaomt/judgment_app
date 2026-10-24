@@ -11,15 +11,30 @@ from judgment_app.analysis.comparison_models import ComparisonReport, Comparison
 
 
 class ComparisonReportTests(unittest.TestCase):
-    def test_results_require_reason_only_for_unmatched(self):
+    def test_results_require_reason_for_non_equal(self):
         self.assertEqual(ComparisonResult(status='equal').status, 'equal')
         self.assertEqual(ComparisonResult(status='unmatched', reason='累犯不合').status, 'unmatched')
+        self.assertEqual(ComparisonResult(status='judgment_not_found', reason='判決不存在').status,
+                         'judgment_not_found')
         for row in ({'status': 'unmatched'}, {'status': 'unmatched', 'reason': None},
                     {'status': 'unmatched', 'reason': ''}, {'status': 'unmatched', 'reason': ' \n'},
                     {'status': 'unmatched', 'reason': 123}, {'status': 'equal', 'reason': '累犯不合'},
+                    {'status': 'judgment_not_found'}, {'status': 'judgment_not_found', 'reason': ''},
                     {'status': 'unknown'}, {'status': 'different'}, {'status': ['equal']}):
             with self.subTest(row=row), self.assertRaises(ValidationError):
                 ComparisonReport.model_validate({'rows': [row], 'errors': []})
+
+    def test_missing_judgment_report_can_be_loaded_and_counted(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / 'report.json'
+            path.write_text(json.dumps({'rows': [
+                {'status': 'judgment_not_found', 'reason': '判決不存在'},
+                {'status': 'unmatched', 'reason': '法條不合'},
+            ], 'errors': []}), encoding='utf-8')
+            report = load_comparison_report(path)
+        self.assertEqual(report['summary'], {
+            'judgment_not_found': 1, 'unmatched': 1, 'total': 2, 'errors': 0,
+        })
 
     def test_excel_output_requires_valid_source_and_output(self):
         for outputs in ([None], [{}], [{'source': 'a.xlsx'}],

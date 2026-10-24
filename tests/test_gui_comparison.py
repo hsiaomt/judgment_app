@@ -36,7 +36,7 @@ class GuiComparisonTests(unittest.TestCase):
         report = {
             'rows': [{'row': 2, 'status': 'equal', 'name': 'equal-person'},
                      {'row': 3, 'status': 'unmatched', 'reason': '累犯不合'},
-                     {'row': 4, 'status': 'unmatched', 'reason': '判決不存在'},
+                     {'row': 4, 'status': 'judgment_not_found', 'reason': '判決不存在'},
                      {'row': 5, 'status': 'unmatched', 'reason': '格式錯誤'},
                      {'row': 6, 'status': 'unmatched', 'reason': '法條／刑度無符合候選'}],
             'summary': {'total': 5}, 'errors': [{'error': '讀取失敗'}], 'sheets': [],
@@ -60,7 +60,7 @@ class GuiComparisonTests(unittest.TestCase):
         log = '\n'.join(call.args[0] for call in app.append_log.call_args_list)
         self.assertNotIn('equal-person', log)
         values = [call.kwargs['values'] for call in app.comparison_tree.insert.call_args_list]
-        self.assertEqual([row[5] for row in values], ['unmatched', 'unmatched', 'unmatched', 'unmatched', 'error'])
+        self.assertEqual([row[5] for row in values], ['unmatched', 'judgment_not_found', 'unmatched', 'unmatched', 'error'])
         self.assertIn('累犯', values[0][6])
         self.assertEqual(values[-1][6], '讀取失敗')
         self.assertNotIn('old', app.comparison_rows)

@@ -17,10 +17,10 @@ class MatchedCandidate(BaseModel):
 
 
 class ComparisonResult(BaseModel):
-    """單列或單份判決的比對結果，兩種狀態共用同一模型。"""
+    """單列或單份判決的比對結果。"""
     model_config = ConfigDict(strict=True, extra="forbid")
 
-    status: Literal["equal", "unmatched"]
+    status: Literal["equal", "unmatched", "judgment_not_found"]
     reason: NonBlankText | None = None
     excel: str | None = None
     sheet: str | None = None
@@ -34,8 +34,8 @@ class ComparisonResult(BaseModel):
 
     @model_validator(mode="after")
     def _check_reason(self) -> Self:
-        if self.status == "unmatched" and self.reason is None:
-            raise ValueError("unmatched 必須提供 reason")
+        if self.status != "equal" and self.reason is None:
+            raise ValueError(f"{self.status} 必須提供 reason")
         if self.status == "equal" and self.reason is not None:
             raise ValueError("equal 不可提供 reason")
         return self

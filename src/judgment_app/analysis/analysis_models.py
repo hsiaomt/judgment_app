@@ -23,7 +23,8 @@ LAW_NAME_ALIASES = {
     "家庭暴力防治": "家庭暴力防治法",
     "槍砲彈刀條例": "槍砲彈藥刀械管制條例",
     "電遊場業管理": "電子遊戲場業管理條例",
-    "兒少性剝削": "兒童及少年性剝削防制條例"
+    "兒少性剝削": "兒童及少年性剝削防制條例",
+    "妨害兵役條例": "妨害兵役治罪條例",
 }
 LAW_NAME_SUFFIXES = ("法", "條例")
 DEFAULT_LAW_NAME = "刑法"
@@ -41,8 +42,9 @@ CASE_LEVEL_RULES = """
 一審為地方法院判決且案號無「上」字；二審為高等法院判決，或地方法院判決且案號有「上」字。
 """.strip()
 
-GUILTY_RULES = """
+COLUMN_RULES = """
 免刑的罪名仍視為有罪，刑度全部為null。
+判決書的併科罰金與併科罰金易勞標準直接忽略，不要輸出，若易科或易勞標準共用於徒刑、拘役或罰金則依其欄位輸出。
 """.strip()
 
 TARGET_RULES = """
@@ -52,7 +54,7 @@ TARGET_RULES = """
 
 
 def build_prompt(*, has_target_case: bool = False) -> str:
-    rules = [PROMPT_RULES, CASE_LEVEL_RULES, GUILTY_RULES]
+    rules = [PROMPT_RULES, CASE_LEVEL_RULES, COLUMN_RULES]
     if has_target_case:
         rules.append(TARGET_RULES)
     return "\n\n".join(rules)
@@ -106,7 +108,10 @@ class JudgmentAnalysis(AnalysisModel):
 class DefendantAnalysis(AnalysisModel):
     name: NonBlankStr = Field(description="被告姓名，若為英文或外籍姓名請保留原文")
     is_recidivist: bool = Field(description="是否累犯，判決內容有說明為累犯但沒有加重刑度仍為true")
-    is_pros_appeal: bool | None = Field(default=None, description="二審上訴人是否有檢察署；一審則為null")
+    is_pros_appeal: bool | None = Field(default=None, description=(
+        "不論目標判決為何，只要歷審的「二審」上訴人有檢察署，該二審判決內的被告此欄位即為true；"
+        "目標判決為一審則為null"
+    ))
     appeal_result: str | None = Field(default=None, description="上訴結果；一審為null")
     probation: PositiveInt | None = Field(default=None, description="緩刑年數")
     probation_law: ProbationLaw | None = Field(default=None, description="刑法第74條第1項第1款為1，第2款為2；若有緩刑但無明文1款或2款可由文字推測為1或2")
@@ -158,7 +163,8 @@ class CrimeAnalysis(AnalysisModel):
     ))
     laws: list["LawReference"] | None = Field(description=(
         "此罪名對應的LawReference物件清單，不填法條字串；一罪可有多個法條，"
-        "不得把未另列罪名的專屬法條加入保留罪名，加重、減輕法條可列入，"
+        "不得把未另列罪名的專屬法條加入保留罪名。"
+        "加重、減輕法條：刑法不列入，特別法可列入。"
         "不要存幫助(例:刑法30條1項)、未遂(例:毒品危害防制條例4條6項)法條，"
         "直接以LawReference.is_accessory、LawReference.is_attempted欄位表示。"
     ))
