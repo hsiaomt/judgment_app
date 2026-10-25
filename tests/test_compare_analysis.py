@@ -6,8 +6,8 @@ import unittest
 
 import pandas as pd
 
-from judgment_app.analysis.compare import compare_files
-from judgment_app.analysis.compare import load_analyses
+from judgment_app.analysis.compare_law_penalty import compare_files
+from judgment_app.analysis.compare_law_penalty import load_analyses
 from judgment_app.analysis.analysis_models import (
     JudgmentAnalysis, DefendantAnalysis, CrimeAnalysis, ExecutionGroup, LawReference,
 )

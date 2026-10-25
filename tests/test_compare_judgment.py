@@ -10,9 +10,10 @@ from openpyxl import load_workbook
 
 from judgment_app.analysis.analysis_models import JudgmentAnalysis
 from judgment_app.analysis.compare_judgment import (
-    build_judgment_analysis, compare_analyses, compare_files, compare_to_report,
+    build_judgment_analysis, compare_analyses, compare_files,
     excel_row_to_law_reference,
 )
+from judgment_app.analysis.compare_common import compare_to_report, load_comparison_report
 
 
 class CompareJudgmentTests(unittest.TestCase):
@@ -457,10 +458,22 @@ class CompareJudgmentTests(unittest.TestCase):
     def test_report_output_and_source_protection(self):
         self.run_report()
         destination = self.root / "report.json"
-        report = compare_to_report(self.excel, self.root, destination)
+        report = compare_to_report(self.excel, self.root, destination, compare=compare_files)
         self.assertEqual(json.loads(destination.read_text(encoding="utf-8")), report)
+        self.assertEqual(load_comparison_report(destination), report)
         with self.assertRaisesRegex(ValueError, "覆寫分析 JSON"):
-            compare_to_report(self.excel, self.root, self.source)
+            compare_to_report(self.excel, self.root, self.source, compare=compare_files)
+
+    def test_grouped_mismatch_report_can_be_loaded(self):
+        self.data['defendants'][0]['crimes'][0]['penalty'] = 12
+        report = self.run_report([self.row, self.row])
+        self.assertEqual(report['summary'], {'unmatched': 1, 'total': 1, 'errors': 0})
+        result = report['rows'][0]
+        self.assertEqual(len(result['excel_rows']), 2)
+        self.assertTrue(result['document_results'][0]['differences'])
+        destination = self.root / 'report.json'
+        destination.write_text(json.dumps(report), encoding='utf-8')
+        self.assertEqual(load_comparison_report(destination), report)
 
     def test_rerun_clears_reasons_and_empty_rows_without_extra_columns(self):
         self.row['姓名'] = '不存在'

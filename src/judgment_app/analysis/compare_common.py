@@ -1,17 +1,50 @@
 """Excel 比對共用的欄位轉換、姓名配對及檔案讀寫工具。"""
 
 import json
+from collections.abc import Iterator
 from pathlib import Path
 import re
 from tempfile import NamedTemporaryFile
 
 import pandas as pd
 from openpyxl import Workbook, load_workbook
+from pydantic import ValidationError
 
 from judgment_app.analysis.analysis_models import JudgmentAnalysis
+from judgment_app.analysis.comparison_models import ComparisonReport
 from judgment_app.case_number import CaseNumber
+from judgment_app.paths import resolve_output_path
 
 IDENTITY_COLUMNS = {"裁判機關", "裁判年度", "裁判冠字", "裁判號數", "姓名"}
+
+
+def load_comparison_report(path: str | Path) -> dict:
+    """讀取既有報告，驗證顯示所需欄位並重新計算摘要；不修改檔案。"""
+    source = resolve_output_path(path)
+    report = json.loads(source.read_text(encoding="utf-8-sig"))
+    try:
+        return ComparisonReport.model_validate(report).to_dict()
+    except ValidationError as exc:
+        raise ValueError(f"不是有效的比對報告：{source}：{exc}") from exc
+
+
+def compare_to_report(excel_path: Path, json_path: Path, destination: Path, *, compare, progress=None) -> dict:
+    """執行指定的比對方法，回寫 Excel 結果並另存 JSON 報告。"""
+    destination = resolve_output_path(destination).resolve()
+    if destination.suffix.lower() != ".json":
+        raise ValueError("比對報告必須為 .json 檔案")
+    if any(Path(source).resolve() == destination for source in (excel_path, json_path)):
+        raise ValueError("比對報告不可覆寫來源檔案")
+    if destination.exists():
+        data = json.loads(destination.read_text(encoding="utf-8-sig"))
+        if isinstance(data, dict) and "case_number" in data:
+            raise ValueError("比對報告不可覆寫分析 JSON")
+    report = compare(excel_path, json_path, progress=progress)
+    if progress:
+        progress(f"正在儲存比對報告：{destination}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    return report
 
 
 def write_excel_statuses(path: Path, statuses: dict, *, legacy_tables=None) -> Path:
@@ -77,38 +110,37 @@ def matches_defendant_name(excel_name: str, json_name: str) -> bool:
     return json_name.startswith(excel_prefix)
 
 
-def excel_col_to_val(column: str, value):
-    text = _text(value)
-    if column in {"未遂", "幫助", "累犯"}:
-        bool_values = {
-            "": False, "0": False, "0.0": False,
-            "否": False, "n": False, "false": False,
-            "1": True, "1.0": True,
-            "是": True, "y": True, "true": True, "✓": True,
-        }
-        try:
-            return bool_values[text.lower()]
-        except KeyError:
-            raise ValueError(f"{column}布林值無法辨識：{text}") from None
-    if not text or text.lower() == "x":
-        return None
-    if column in {"裁判情形", "案由"}:
-        return text
-    if column in {"條段", "項段"}:
-        return text.upper()
+def find_excel_files(path: Path) -> list[Path]:
+    files = find_files(path, {".xls", ".xlsx"})
+    if path.is_dir():
+        files = [file for file in files if not re.search(r"\.status(?:-\d+)?\.xlsx$", file.name, re.IGNORECASE)]
+    if not files:
+        raise ValueError(f"找不到 Excel：{path}")
+    return files
 
-    number = _non_negative_integer(value)
-    if column == "徒刑(YYMM)":
-        if number == 0:
-            return None
-        years, months = divmod(number, 100)
-        if months >= 12:
-            raise ValueError(f"YYMM 月份不合法：{value}")
-        return years * 12 + months
-    if number == 0 and column in {"拘役", "罰金", "併科罰金"}:
-        return None
 
-    return number
+def read_excel_header(table: pd.DataFrame) -> tuple[int, dict[str, int]]:
+    """回傳標題列的零起算位置及欄位索引；同名取首欄，排除空白與舊結果欄。"""
+    header = next((i for i, row in enumerate(table.itertuples(index=False, name=None))
+                   if IDENTITY_COLUMNS <= {_text(value) for value in row}), None)
+    if header is None:
+        raise ValueError("找不到裁判案號及姓名標題列")
+    columns = {}
+    for i, name in enumerate(table.iloc[header]):
+        columns.setdefault(_text(name), i)
+    for name in ("", "status", "reason"):
+        columns.pop(name, None)
+    return header, columns
+
+
+def iter_excel_rows(table: pd.DataFrame, header: int, columns: dict[str, int],
+                    path: Path, sheet: str) -> Iterator[tuple[dict, dict]]:
+    """逐列提供欄位值與實際 Excel 來源位置；全空白列不產生結果。"""
+    for i in range(header + 1, len(table)):
+        row = {name: table.iat[i, col] for name, col in columns.items()}
+        if all(_is_blank(value) for value in row.values()):
+            continue
+        yield row, {"excel": str(path), "sheet": sheet, "row": i + 1}
 
 
 def load_analyses(path: Path, errors: list) -> dict[CaseNumber, list[tuple[Path, JudgmentAnalysis]]]:
@@ -131,6 +163,34 @@ def find_files(path: Path, suffixes: set[str]) -> list[Path]:
         raise ValueError(f"路徑不存在：{path}")
     return sorted(p for p in ([path] if path.is_file() else path.rglob("*"))
                   if p.is_file() and p.suffix.lower() in suffixes and not p.name.startswith("~$"))
+
+
+def excel_bool(value, *, column: str, blank: bool | None = False) -> bool | None:
+    """共用布林值解析；空白預設 False，可由選填欄位指定 None。"""
+    text = _text(value)
+    if not text:
+        return blank
+    bool_values = {
+        "0": False, "0.0": False, "否": False, "n": False, "false": False,
+        "1": True, "1.0": True, "是": True, "y": True, "true": True, "✓": True,
+    }
+    try:
+        return bool_values[text.lower()]
+    except KeyError:
+        raise ValueError(f"{column}布林值無法辨識：{text}") from None
+
+
+def excel_integer(value, *, zero_is_none: bool = False) -> int | None:
+    if excel_optional_text(value) is None:
+        return None
+    number = _non_negative_integer(value)
+    return None if zero_is_none and number == 0 else number
+
+
+def excel_optional_text(value) -> str | None:
+    """一般欄位的空白及 x 標記視為 None；布林欄位另依 excel_bool 解析。"""
+    text = _text(value)
+    return None if not text or text.lower() == "x" else text
 
 
 def _non_negative_integer(value) -> int:

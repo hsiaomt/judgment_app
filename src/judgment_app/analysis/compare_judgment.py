@@ -1,7 +1,6 @@
 """依執行明細 Excel 建立 JudgmentAnalysis，與分析 JSON 比對完整物件。"""
 
 import argparse
-from collections import Counter
 import json
 from pathlib import Path
 import re
@@ -11,9 +10,11 @@ import pandas as pd
 from judgment_app.analysis.analysis_models import (
     CrimeAnalysis, DefendantAnalysis, ExecutionGroup, JudgmentAnalysis, LawReference,
 )
+from judgment_app.analysis.comparison_models import ComparisonReport
 from judgment_app.analysis.compare_common import (
-    IDENTITY_COLUMNS, _is_blank, excel_col_to_val, find_files, _non_negative_integer,
-    load_analyses, matches_defendant_name, _text, write_excel_statuses,
+    IDENTITY_COLUMNS, _is_blank, excel_bool, excel_integer, excel_optional_text, _non_negative_integer,
+    find_excel_files, read_excel_header, iter_excel_rows,
+    compare_to_report, load_analyses, matches_defendant_name, _text, write_excel_statuses,
 )
 from judgment_app.case_number import CaseNumber
 from judgment_app.paths import resolve_output_path
@@ -57,35 +58,18 @@ RATE_VALUES = {
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--excel", default="data/執行明細.xlsx", help="Excel 檔案或資料夾")
+    parser.add_argument("--excel", default="data/11510.xlsx", help="Excel 檔案或資料夾")
     parser.add_argument("--json-dir", required=True, help="分析 JSON 檔案或資料夾")
     parser.add_argument("--output", default="data/judgment_comparison_report.json")
     args = parser.parse_args()
     report = compare_to_report(
         resolve_output_path(args.excel), resolve_output_path(args.json_dir),
-        resolve_output_path(args.output),
+        resolve_output_path(args.output), compare=compare_files,
     )
     print(json.dumps(report["summary"], ensure_ascii=False))
     print(f"比對報告：{resolve_output_path(args.output)}")
     for output in report["excel_outputs"]:
         print(f"Excel 比對結果：{output['output']}")
-
-
-def compare_to_report(excel_path: Path, json_path: Path, destination: Path, *, progress=None) -> dict:
-    """回寫 Excel status、reason，另存 JSON 報告。"""
-    destination = resolve_output_path(destination).resolve()
-    if destination.suffix.lower() != ".json":
-        raise ValueError("比對報告必須為 .json 檔案")
-    if any(Path(source).resolve() == destination for source in (excel_path, json_path)):
-        raise ValueError("比對報告不可覆寫來源檔案")
-    if destination.exists():
-        data = json.loads(destination.read_text(encoding="utf-8-sig"))
-        if isinstance(data, dict) and "case_number" in data:
-            raise ValueError("比對報告不可覆寫分析 JSON")
-    report = compare_files(excel_path, json_path, progress=progress)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    return report
 
 
 def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
@@ -121,9 +105,7 @@ def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
                           "reason": "；".join(dict.fromkeys(d["reason"] for d in documents))}
             report["rows"].append({**context, **result})
     _write_comparison_results(report, workbooks, progress)
-    report["summary"] = dict(Counter(row["status"] for row in report["rows"]))
-    report["summary"].update(total=len(report["rows"]), errors=len(report["errors"]))
-    return report
+    return ComparisonReport.model_validate(report).to_dict()
 
 
 def build_judgment_analysis(case_number: str, rows: list[dict]) -> JudgmentAnalysis:
@@ -198,8 +180,8 @@ def excel_row_to_law_reference(row: dict) -> LawReference | None:
         paragraph=int(paragraph) or None,
         paragraph_part=paragraph_part.upper() if paragraph_part.upper() in {"A", "B", "C"} else None,
         paragraph_sub=int(clause) or None,
-        is_attempted=excel_col_to_val("未遂", row.get("未遂", row.get("is_attempted"))),
-        is_accessory=excel_col_to_val("幫助", row.get("幫助", row.get("is_accessory"))),
+        is_attempted=excel_bool(row.get("未遂", row.get("is_attempted")), column="未遂"),
+        is_accessory=excel_bool(row.get("幫助", row.get("is_accessory")), column="幫助"),
     )
 
 
@@ -274,11 +256,7 @@ def _execution_group_differences(expected: list[dict], actual: list[dict], path:
 
 
 def _read_excel_cases(path: Path, report: dict, progress, *, workbooks: dict | None = None) -> dict:
-    files = find_files(path, {".xls", ".xlsx"})
-    if path.is_dir():
-        files = [file for file in files if not re.search(r"\.status(?:-\d+)?\.xlsx$", file.name, re.IGNORECASE)]
-    if not files:
-        raise ValueError(f"找不到 Excel：{path}")
+    files = find_excel_files(path)
     cases = {}
     for source in files:
         state = {"statuses": {}, "legacy_tables": {} if source.suffix.lower() == ".xls" else None,
@@ -295,16 +273,7 @@ def _read_excel_cases(path: Path, report: dict, progress, *, workbooks: dict | N
                         table = book.parse(sheet, header=None, dtype=object)
                         if state["legacy_tables"] is not None:
                             state["legacy_tables"][sheet] = table
-                        header = next((i for i, row in table.iterrows()
-                                       if IDENTITY_COLUMNS <= {_text(x) for x in row}), None)
-                        if header is None:
-                            raise ValueError("找不到裁判案號及姓名標題列")
-                        columns = {}
-                        for i, name in enumerate(table.iloc[header]):
-                            columns.setdefault(_text(name), i)
-                        columns.pop("", None)
-                        columns.pop("status", None)
-                        columns.pop("reason", None)
+                        header, columns = read_excel_header(table)
                         missing = REQUIRED_COLUMNS - columns.keys()
                         if missing:
                             raise ValueError(f"缺少執行明細欄位：{'、'.join(sorted(missing))}")
@@ -318,11 +287,7 @@ def _read_excel_cases(path: Path, report: dict, progress, *, workbooks: dict | N
                                 (set(FIELD_MAP) - {"應執裁判情形", "executed_jsst"}) | REQUIRED_COLUMNS | {"上訴類別"}],
                             "defaulted_fields": sorted(defaulted),
                         })
-                        for i in range(header + 1, len(table)):
-                            row = {name: table.iat[i, col] for name, col in columns.items()}
-                            if all(_is_blank(value) for value in row.values()):
-                                continue
-                            location = {"excel": str(source), "sheet": sheet, "row": i + 1}
+                        for row, location in iter_excel_rows(table, header, columns, source, sheet):
                             try:
                                 case = CaseNumber(_text(row["裁判機關"]), _non_negative_integer(row["裁判年度"]),
                                                   _text(row["裁判冠字"]), _non_negative_integer(row["裁判號數"]))
@@ -374,10 +339,10 @@ def _row_values(row: dict, case: CaseNumber) -> dict:
         field = FIELD_MAP.get(column)
         if field is None or field == "executed_jsst":
             continue
-        text = _text(raw)
+        text = excel_optional_text(raw)
         if field in {"is_recidivist", "is_attempted", "is_accessory", "is_pros_appeal"}:
-            value = None if field == "is_pros_appeal" and not text else excel_col_to_val("累犯", raw)
-        elif not text or text.lower() == "x":
+            value = excel_bool(raw, column=column, blank=None if field == "is_pros_appeal" else False)
+        elif text is None:
             value = None
         elif field in {"crime_jsst", "executed_jsst"}:
             value = text
@@ -390,11 +355,9 @@ def _row_values(row: dict, case: CaseNumber) -> dict:
                 raise ValueError(f"緩刑期間無法以整年表示：{raw}")
             value = years or None
         elif field.endswith(("_to_fine", "_to_detention")):
-            value = RATE_VALUES[text] if text in RATE_VALUES else _non_negative_integer(raw) or None
+            value = RATE_VALUES[text] if text in RATE_VALUES else excel_integer(raw, zero_is_none=True)
         else:
-            value = _non_negative_integer(raw)
-            if field != "times":
-                value = value or None
+            value = excel_integer(raw, zero_is_none=field != "times")
         if field in supplied and values[field] != value:
             raise ValueError(f"同一欄位的標題別名內容不一致：{field}")
         values[field] = value

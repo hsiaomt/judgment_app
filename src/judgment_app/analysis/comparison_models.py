@@ -3,7 +3,7 @@
 from collections import Counter
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, PositiveInt, StringConstraints, model_validator
 
 
 NonBlankText = Annotated[str, StringConstraints(min_length=1, pattern=r"\S")]
@@ -16,8 +16,22 @@ class MatchedCandidate(BaseModel):
     crime_id: PositiveInt
 
 
+class ExcelRowLocation(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+    excel: NonBlankText
+    sheet: NonBlankText
+    row: PositiveInt
+
+
+class ComparisonDifference(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+    field: NonBlankText
+    excel: JsonValue
+    json_value: JsonValue = Field(alias="json")
+
+
 class ComparisonResult(BaseModel):
-    """單列或單份判決的比對結果。"""
+    """單列、被告彙整或單份判決的比對結果。"""
     model_config = ConfigDict(strict=True, extra="forbid")
 
     status: Literal["equal", "unmatched", "judgment_not_found"]
@@ -31,6 +45,8 @@ class ComparisonResult(BaseModel):
     candidate_crime_ids: list[PositiveInt] = Field(default_factory=list)
     matched_candidates: list[MatchedCandidate] = Field(default_factory=list)
     document_results: list[Self] = Field(default_factory=list)
+    excel_rows: list[ExcelRowLocation] = Field(default_factory=list)
+    differences: list[ComparisonDifference] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _check_reason(self) -> Self:
@@ -48,6 +64,10 @@ class ReportError(BaseModel):
     sheet: str | None = None
     row: PositiveInt | None = None
     stage: str | None = None
+    excel: str | None = None
+    excel_rows: list[ExcelRowLocation] = Field(default_factory=list)
+    case_number: str | None = None
+    name: str | None = None
 
 
 class SheetReport(BaseModel):
@@ -55,6 +75,7 @@ class SheetReport(BaseModel):
     file: str
     sheet: str
     uncompared_columns: list[str] = Field(default_factory=list)
+    defaulted_fields: list[str] = Field(default_factory=list)
 
 
 class ExcelOutput(BaseModel):
@@ -69,6 +90,7 @@ class ComparisonReport(BaseModel):
     errors: list[ReportError]
     sheets: list[SheetReport] = Field(default_factory=list)
     excel_outputs: list[ExcelOutput] = Field(default_factory=list)
+    ignored_fields: list[str] = Field(default_factory=list)
 
     def to_dict(self) -> dict:
         """維持既有字典介面；不補出未提供的欄位，摘要一律依結果重新計算。"""

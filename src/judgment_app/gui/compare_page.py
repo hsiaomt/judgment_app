@@ -3,7 +3,8 @@ import json
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from judgment_app.analysis.compare import compare_to_report, load_comparison_report
+from judgment_app.analysis.compare_law_penalty import compare_files
+from judgment_app.analysis.compare_common import compare_to_report, load_comparison_report
 from judgment_app.paths import default_output_dir, resolve_output_path
 from .common import TaskPage
 
@@ -74,7 +75,9 @@ class ComparePage(TaskPage):
             messagebox.showerror("比對設定", str(exc), parent=self.root)
             return
         self.status.set("正在準備比對…")
-        self.run_task("comparison", lambda: (compare_to_report(excel, source, destination, progress=self.progress), destination))
+        self.run_task("comparison", lambda: (compare_to_report(
+            excel, source, destination, compare=compare_files, progress=self.progress,
+        ), destination))
 
     def import_report(self):
         if self.busy:
@@ -91,8 +94,8 @@ class ComparePage(TaskPage):
         report, destination = result
         rows = [row for row in report["rows"] if row["status"] != "equal"]
         action = "報告匯入完成" if kind == "import_report" else "比對完成"
-        summary = (f"{action}：共 {report['summary']['total']} 列，equal {report['summary'].get('equal', 0)} 列，"
-                   f"非 equal {len(rows)} 列，錯誤 {len(report['errors'])} 項。")
+        summary = (f"{action}：共 {report['summary']['total']} 筆結果，equal {report['summary'].get('equal', 0)} 筆，"
+                   f"非 equal {len(rows)} 筆，錯誤 {len(report['errors'])} 項。")
         self.status.set(summary)
         self.append_log(summary)
         self.append_log(f"比對報告：{destination}")
@@ -121,9 +124,9 @@ class ComparePage(TaskPage):
                     return
                 details = [row["reason"]] if row.get("reason") else []
                 item = self.comparison_tree.insert("", "end", values=(
-                    row.get("file" if is_error else "excel", ""), row.get("sheet", ""), row.get("row", ""),
+                    *_source_columns(row),
                     row.get("case_number", ""), row.get("name", ""), "error" if is_error else row["status"],
-                    row["error"] if is_error else "；".join(details), row.get("json", "")))
+                    row["error"] if is_error else "；".join(details), "；".join(_json_sources(row))))
                 self.comparison_rows[item] = row
             self.root.after(1, insert_batch)
 
@@ -146,3 +149,27 @@ class ComparePage(TaskPage):
         detail.configure(yscrollcommand=scroll.set)
         detail.insert("1.0", json.dumps(self.comparison_rows[item], ensure_ascii=False, indent=2))
         detail.configure(state="disabled")
+
+
+def _source_columns(record: dict) -> tuple:
+    """依檔案、工作表彙整列號；三個欄位使用相同順序保留來源對應。"""
+    locations = record.get("excel_rows")
+    if not locations:
+        return (record.get("file") or record.get("excel") or "",
+                record.get("sheet") or "", record.get("row") or "")
+    groups = {}
+    for location in locations:
+        key = (location["excel"], location["sheet"])
+        groups.setdefault(key, set()).add(location["row"])
+    return (
+        "；".join(excel for excel, _ in groups),
+        "；".join(sheet for _, sheet in groups),
+        "；".join("、".join(str(row) for row in sorted(rows)) for rows in groups.values()),
+    )
+
+
+def _json_sources(record: dict) -> list[str]:
+    sources = [record["json"]] if record.get("json") else []
+    for document in record.get("document_results", []):
+        sources.extend(_json_sources(document))
+    return list(dict.fromkeys(sources))
