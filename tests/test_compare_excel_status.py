@@ -8,7 +8,7 @@ import pandas as pd
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
-from judgment_app.analysis.compare import compare_files, _compare_row, _write_excel_statuses
+from judgment_app.analysis.compare_law_penalty import compare_files, _compare_row, write_excel_statuses
 
 
 class ExcelStatusTests(unittest.TestCase):
@@ -52,8 +52,8 @@ class ExcelStatusTests(unittest.TestCase):
         self.assertEqual([r['status'] for r in report['rows'][:4]],
                          ['equal', 'unmatched', 'unmatched', 'unmatched'])
         for row in report['rows']:
-            expected = row['reason'] if row['status'] == 'unmatched' else 'equal'
-            self.assertEqual(book[row['sheet']].cell(row['row'], 9).value, expected)
+            self.assertEqual(book[row['sheet']].cell(row['row'], 9).value, row['status'])
+            self.assertEqual(book[row['sheet']].cell(row['row'], 10).value, row.get('reason'))
         self.assertEqual(book['比對'].cell(2, 9).value, 'status')
         self.assertTrue(book['比對']['A1'].font.bold)
         self.assertIn('A1:C1', book['比對'].merged_cells)
@@ -73,11 +73,30 @@ class ExcelStatusTests(unittest.TestCase):
         report = compare_files(self.excel, self.json_path)
         book = load_workbook(self.excel)
         self.addCleanup(book.close)
-        self.assertEqual(book['比對'].max_column, 9)
-        self.assertEqual(book['比對']['I3'].value, '被告姓名無法唯一配對')
+        self.assertEqual(book['比對'].max_column, 10)
+        self.assertEqual(book['比對']['I3'].value, 'unmatched')
+        self.assertEqual(book['比對']['J3'].value, '被告姓名無法唯一配對')
         self.assertIsNone(book['比對']['I4'].value)
+        self.assertIsNone(book['比對']['J4'].value)
         self.assertFalse(any(r['sheet'] == '比對' and r['row'] == 4 for r in report['rows']))
         self.assertNotIn('status', report['sheets'][0]['uncompared_columns'])
+        self.assertNotIn('reason', report['sheets'][0]['uncompared_columns'])
+
+    def test_missing_judgment_has_separate_status_and_summary(self):
+        book = load_workbook(self.excel)
+        book['比對']['D3'] = 2
+        book.save(self.excel)
+        book.close()
+        report = compare_files(self.excel, self.json_path)
+        result = report['rows'][0]
+        self.assertEqual(result['status'], 'judgment_not_found')
+        self.assertEqual(result['reason'], '判決不存在')
+        self.assertEqual(report['summary']['judgment_not_found'], 1)
+        self.assertEqual(report['summary']['unmatched'], 7)
+        book = load_workbook(self.excel)
+        self.addCleanup(book.close)
+        self.assertEqual(book['比對']['I3'].value, 'judgment_not_found')
+        self.assertEqual(book['比對']['J3'].value, '判決不存在')
 
     def test_save_failure_preserves_source_and_reports_error(self):
         original = self.excel.read_bytes()
@@ -88,9 +107,26 @@ class ExcelStatusTests(unittest.TestCase):
         self.assertEqual(len(report['rows']), 8)
         self.assertEqual(list(self.root.glob('~$status-*')), [])
 
+    def test_existing_reason_column_is_reused_and_written_as_text(self):
+        book = load_workbook(self.excel)
+        book['比對']['I2'] = 'reason'
+        book['比對']['I3'] = '舊原因'
+        book['比對']['J2'] = 'status'
+        book.save(self.excel)
+        book.close()
+        with patch('judgment_app.analysis.compare_law_penalty._compare_row',
+                   return_value={'status': 'unmatched', 'reason': '=1+1'}):
+            compare_files(self.excel, self.json_path)
+        book = load_workbook(self.excel)
+        self.addCleanup(book.close)
+        self.assertEqual(book['比對'].max_column, 10)
+        self.assertEqual(book['比對']['I3'].value, '=1+1')
+        self.assertEqual(book['比對']['I3'].data_type, 's')
+        self.assertEqual(book['比對']['J3'].value, 'unmatched')
+
     def test_invalid_generated_result_is_rejected_before_excel_write(self):
         original = self.excel.read_bytes()
-        with patch('judgment_app.analysis.compare._compare_row', return_value={'status': 'unmatched'}):
+        with patch('judgment_app.analysis.compare_law_penalty._compare_row', return_value={'status': 'unmatched'}):
             report = compare_files(self.excel, self.json_path)
         self.assertEqual(report['rows'], [])
         self.assertIn('reason', report['errors'][0]['error'])
@@ -126,15 +162,16 @@ class ExcelStatusTests(unittest.TestCase):
                 raise RuntimeError('單列處理失敗')
             return _compare_row(row, index)
 
-        with patch('judgment_app.analysis.compare._compare_row', side_effect=compare):
+        with patch('judgment_app.analysis.compare_law_penalty._compare_row', side_effect=compare):
             report = compare_files(self.excel, self.json_path)
         self.assertEqual(len(report['rows']), 8)
         error = next(e for e in report['errors'] if e['stage'] == 'compare_row')
         self.assertEqual((error['sheet'], error['row']), ('比對', 5))
         book = load_workbook(self.excel)
-        self.assertEqual(book['比對']['I5'].value, 'RuntimeError: 單列處理失敗')
+        self.assertEqual(book['比對']['I5'].value, 'unmatched')
+        self.assertEqual(book['比對']['J5'].value, 'RuntimeError: 單列處理失敗')
         last_row = next(r for r in report['rows'] if r['sheet'] == '比對' and r['row'] == 6)
-        self.assertEqual(book['比對']['I6'].value, last_row['reason'])
+        self.assertEqual(book['比對']['J6'].value, last_row['reason'])
         book.close()
 
     def test_bad_workbook_and_save_failure_do_not_stop_other_files(self):
@@ -147,9 +184,9 @@ class ExcelStatusTests(unittest.TestCase):
         def write(path, *args, **kwargs):
             if path == self.excel:
                 raise PermissionError('無法寫入')
-            return _write_excel_statuses(path, *args, **kwargs)
+            return write_excel_statuses(path, *args, **kwargs)
 
-        with patch('judgment_app.analysis.compare._write_excel_statuses', side_effect=write):
+        with patch('judgment_app.analysis.compare_law_penalty.write_excel_statuses', side_effect=write):
             report = compare_files(self.root, self.json_path)
         self.assertEqual(len(report['rows']), 16)
         self.assertTrue(any(e['file'] == str(broken) and e['stage'] == 'read_workbook' for e in report['errors']))
@@ -166,7 +203,7 @@ class ExcelStatusTests(unittest.TestCase):
             # 用既有表格模擬 xlrd 讀取結果，驗證轉存與目錄掃描流程。
             return original_excel_file(self.excel if Path(path) == source else path)
 
-        with patch('judgment_app.analysis.compare.pd.ExcelFile', side_effect=read_book):
+        with patch('judgment_app.analysis.compare_law_penalty.pd.ExcelFile', side_effect=read_book):
             report = compare_files(source, self.json_path)
             output = Path(report['excel_outputs'][0]['output'])
             self.assertEqual(output.name, 'legacy.status.xlsx')
@@ -175,7 +212,8 @@ class ExcelStatusTests(unittest.TestCase):
             self.assertEqual(book.sheetnames, ['比對', '第二張', '說明'])
             self.assertEqual(book['比對']['I2'].value, 'status')
             self.assertEqual(book['比對']['I3'].value, 'equal')
-            self.assertEqual(book['比對']['I4'].value, '累犯不合')
+            self.assertEqual(book['比對']['I4'].value, 'unmatched')
+            self.assertEqual(book['比對']['J4'].value, '累犯不合')
             book.close()
             report = compare_files(self.root, self.json_path)
             self.assertEqual(len(report['rows']), 16)  # 只讀原本的 xls 與 xlsx。
@@ -196,7 +234,7 @@ class ExcelStatusTests(unittest.TestCase):
             return original_parse(book, sheet, **kwargs)
 
         with patch.object(original_excel_file, 'parse', parse), patch(
-            'judgment_app.analysis.compare.pd.ExcelFile',
+            'judgment_app.analysis.compare_law_penalty.pd.ExcelFile',
             side_effect=lambda path: original_excel_file(self.excel),
         ):
             report = compare_files(source, self.json_path)

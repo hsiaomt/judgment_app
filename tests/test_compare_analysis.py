@@ -6,8 +6,8 @@ import unittest
 
 import pandas as pd
 
-from judgment_app.analysis.compare import compare_files
-from judgment_app.analysis.compare import _load_analyses
+from judgment_app.analysis.compare_law_penalty import compare_files
+from judgment_app.analysis.compare_law_penalty import load_analyses
 from judgment_app.analysis.analysis_models import (
     JudgmentAnalysis, DefendantAnalysis, CrimeAnalysis, ExecutionGroup, LawReference,
 )
@@ -28,7 +28,6 @@ class CompareAnalysisTests(unittest.TestCase):
         self.data = {'case_number': '臺灣高等法院115年度上訴字第1299號', 'defendants': [
             {'name': '甲', 'is_recidivist': False, 'crimes': [
                 {'crime_id': 1, 'crime_jsst': '科刑', 'crime_name': '詐欺', 'times': 1, 'penalty': 50, 'detention': None, 'fine': None,
-                 'addition_fine': None,
                  'laws': [{'is_attempted': False, 'is_accessory': False, 'law_name': '刑法', 'article': 339, 'article_sub': None,
                            'paragraph': 1, 'paragraph_part': None, 'paragraph_sub': None}]}],
              'execution_groups': [{'crime_ids': [1], 'executed_jsst': '科刑', 'executed_penalty': 60}]}]}
@@ -39,10 +38,10 @@ class CompareAnalysisTests(unittest.TestCase):
             pd.DataFrame([self.row]).to_excel(writer, index=False, startrow=2)
         result = compare_files(self.excel, self.root)['rows'][0]
         for item in [result, *result.get('document_results', [])]:
-            self.assertIn(item['status'], {'equal', 'unmatched'})
+            self.assertIn(item['status'], {'equal', 'unmatched', 'judgment_not_found'})
             self.assertNotIn('differences', item)
             self.assertNotIn('uncomparable', item)
-            if item['status'] == 'unmatched':
+            if item['status'] != 'equal':
                 self.assertTrue(item['reason'])
             else:
                 self.assertNotIn('reason', item)
@@ -57,7 +56,7 @@ class CompareAnalysisTests(unittest.TestCase):
         original = deepcopy(self.data)
         self.run_report()
         errors = []
-        index = _load_analyses(self.root, errors)
+        index = load_analyses(self.root, errors)
         analysis = next(iter(index.values()))[0][1]
         self.assertIsInstance(analysis, JudgmentAnalysis)
         defendant = analysis.defendants[0]
@@ -73,7 +72,7 @@ class CompareAnalysisTests(unittest.TestCase):
         del self.data['defendants'][0]['crimes'][0]['laws'][0]['is_attempted']
         self.run_report()
         report = compare_files(self.excel, self.root)
-        self.assertEqual(report['rows'][0]['status'], 'unmatched')
+        self.assertEqual(report['rows'][0]['status'], 'judgment_not_found')
         self.assertEqual(report['errors'][0]['file'], str(self.source))
         self.assertIn('defendants.0.crimes.0.laws.0.is_attempted', report['errors'][0]['error'])
         self.assertIn('is_attempted', report['errors'][0]['error'])
@@ -261,9 +260,9 @@ class CompareAnalysisTests(unittest.TestCase):
         defendant['crimes'].append(other)
         defendant['execution_groups'] = [
             {'crime_ids': [1], 'executed_jsst': '科刑', 'executed_penalty': 60,
-             'executed_detention': None, 'executed_fine': None, 'executed_addition_fine': None},
+             'executed_detention': None, 'executed_fine': None},
             {'crime_ids': [2], 'executed_jsst': '科刑', 'executed_penalty': 50,
-             'executed_detention': None, 'executed_fine': None, 'executed_addition_fine': None},
+             'executed_detention': None, 'executed_fine': None},
         ]
         result = self.run_report()
         self.assertEqual(result['status'], 'equal')
@@ -318,7 +317,7 @@ class CompareAnalysisTests(unittest.TestCase):
 
     def test_null_recidivist_is_rejected_at_load(self):
         self.data['defendants'][0]['is_recidivist'] = None
-        self.assertEqual(self.run_report()['status'], 'unmatched')
+        self.assertEqual(self.run_report()['status'], 'judgment_not_found')
 
     def test_absent_excel_recidivist_column_is_skipped(self):
         del self.row['累犯']

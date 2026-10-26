@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from judgment_app.gui.compare_page import ComparePage
+from judgment_app.analysis.compare_common import load_comparison_report
 
 
 class GuiComparisonTests(unittest.TestCase):
@@ -36,7 +37,7 @@ class GuiComparisonTests(unittest.TestCase):
         report = {
             'rows': [{'row': 2, 'status': 'equal', 'name': 'equal-person'},
                      {'row': 3, 'status': 'unmatched', 'reason': '累犯不合'},
-                     {'row': 4, 'status': 'unmatched', 'reason': '判決不存在'},
+                     {'row': 4, 'status': 'judgment_not_found', 'reason': '判決不存在'},
                      {'row': 5, 'status': 'unmatched', 'reason': '格式錯誤'},
                      {'row': 6, 'status': 'unmatched', 'reason': '法條／刑度無符合候選'}],
             'summary': {'total': 5}, 'errors': [{'error': '讀取失敗'}], 'sheets': [],
@@ -51,7 +52,7 @@ class GuiComparisonTests(unittest.TestCase):
             app.start_comparison()
             kind, operation = app.run_task.call_args.args
             self.assertEqual(kind, 'comparison')
-            with patch('judgment_app.analysis.compare.compare_files', return_value=report) as compare:
+            with patch('judgment_app.gui.compare_page.compare_files', return_value=report) as compare:
                 result = operation()
             self.assertEqual(compare.call_args.args, (excel, folder))
             self.assertEqual(json.loads((folder / 'comparison_report.json').read_text()), report)
@@ -60,7 +61,7 @@ class GuiComparisonTests(unittest.TestCase):
         log = '\n'.join(call.args[0] for call in app.append_log.call_args_list)
         self.assertNotIn('equal-person', log)
         values = [call.kwargs['values'] for call in app.comparison_tree.insert.call_args_list]
-        self.assertEqual([row[5] for row in values], ['unmatched', 'unmatched', 'unmatched', 'unmatched', 'error'])
+        self.assertEqual([row[5] for row in values], ['unmatched', 'judgment_not_found', 'unmatched', 'unmatched', 'error'])
         self.assertIn('累犯', values[0][6])
         self.assertEqual(values[-1][6], '讀取失敗')
         self.assertNotIn('old', app.comparison_rows)
@@ -110,7 +111,7 @@ class GuiComparisonTests(unittest.TestCase):
                 app.poll()
                 compare.assert_not_called()
             self.assertEqual(source.read_bytes(), original)
-        self.assertIn('報告匯入完成：共 2 列，equal 1 列', app.status.set.call_args.args[0])
+        self.assertIn('報告匯入完成：共 2 筆結果，equal 1 筆', app.status.set.call_args.args[0])
         values = [call.kwargs['values'] for call in app.comparison_tree.insert.call_args_list]
         self.assertEqual([row[5] for row in values], ['unmatched', 'error'])
         self.assertIn('累犯', values[0][6])
@@ -127,7 +128,6 @@ class GuiComparisonTests(unittest.TestCase):
         app.run_task.assert_not_called()
 
     def test_invalid_import_preserves_table_and_restores_controls(self):
-        from judgment_app.analysis.compare import load_comparison_report
         invalid = ['{', '[]', '{"case_number": "判決分析"}',
                    '{"rows": [{"status": "different", "differences": [null]}], "errors": []}',
                    '{"rows": [{"status": "invalid", "reason": {}}], "errors": []}',
@@ -154,7 +154,6 @@ class GuiComparisonTests(unittest.TestCase):
                     self.assertFalse(app.set_busy.call_args.args[0])
 
     def test_empty_report_clears_previous_results(self):
-        from judgment_app.analysis.compare import load_comparison_report
         app = self.app()
         with TemporaryDirectory() as directory:
             source = Path(directory) / 'report.json'
@@ -162,4 +161,39 @@ class GuiComparisonTests(unittest.TestCase):
             app.task_completed('import_report', (load_comparison_report(source), source))
         app.comparison_tree.delete.assert_called_once_with('old')
         self.assertEqual(app.comparison_rows, {})
-        self.assertIn('共 0 列', app.status.set.call_args.args[0])
+        self.assertIn('共 0 筆結果', app.status.set.call_args.args[0])
+
+    def test_import_grouped_report_displays_sources_and_keeps_full_details(self):
+        app = self.app()
+        locations = [
+            {'excel': 'a.xlsx', 'sheet': '明細', 'row': 5},
+            {'excel': 'a.xlsx', 'sheet': '明細', 'row': 4},
+            {'excel': 'a.xlsx', 'sheet': '附表', 'row': 8},
+            {'excel': 'b.xlsx', 'sheet': '明細', 'row': 2},
+        ]
+        row = {'status': 'unmatched', 'reason': '刑度不合', 'name': '甲',
+               'case_number': '案號', 'excel_rows': locations,
+               'document_results': [
+                   {'status': 'unmatched', 'reason': '刑度不合', 'json': 'a.json',
+                    'differences': [{'field': 'penalty', 'excel': 14, 'json': 12}]},
+                   {'status': 'unmatched', 'reason': '刑度不合', 'json': 'b.json'},
+               ]}
+        errors = [{'error': '彙整錯誤', 'excel_rows': locations},
+                  {'error': '案號錯誤', 'excel': 'a.xlsx', 'sheet': '明細', 'row': 9}]
+        with TemporaryDirectory() as directory:
+            source = Path(directory) / 'report.json'
+            source.write_text(json.dumps({'rows': [row], 'errors': errors, 'summary': {'total': 999}}))
+            before = source.read_bytes()
+            with patch('judgment_app.gui.compare_page.filedialog.askopenfilename', return_value=str(source)):
+                app.import_report()
+            kind, operation = app.run_task.call_args.args
+            app.events.put((kind, operation(), None))
+            app.poll()
+            self.assertEqual(source.read_bytes(), before)
+        values = [call.kwargs['values'] for call in app.comparison_tree.insert.call_args_list]
+        self.assertEqual(values[0][:3], ('a.xlsx；a.xlsx；b.xlsx', '明細；附表；明細', '4、5；8；2'))
+        self.assertEqual(values[0][7], 'a.json；b.json')
+        self.assertEqual(values[1][:3], values[0][:3])
+        self.assertEqual(values[2][:3], ('a.xlsx', '明細', 9))
+        self.assertEqual(app.comparison_rows['0'], row)
+        self.assertIn('共 1 筆結果', app.status.set.call_args.args[0])

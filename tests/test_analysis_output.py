@@ -5,7 +5,8 @@ import unittest
 from unittest.mock import Mock, patch
 
 from judgment_app.analysis.analyzer import analyze_source, analyze_folder
-from judgment_app.analysis.compare import compare_to_report
+from judgment_app.analysis.compare_law_penalty import compare_files
+from judgment_app.analysis.compare_common import compare_to_report
 
 
 class AnalysisOutputTests(unittest.TestCase):
@@ -51,5 +52,8 @@ class AnalysisOutputTests(unittest.TestCase):
             source.write_text(original)
             for input_path in (source, source.parent):
                 with self.assertRaisesRegex(ValueError, '覆寫'):
-                    compare_to_report(Path(directory).resolve() / 'source.xlsx', input_path, source)
+                    compare_to_report(
+                        Path(directory).resolve() / 'source.xlsx', input_path, source,
+                        compare=compare_files,
+                    )
                 self.assertEqual(source.read_text(), original)

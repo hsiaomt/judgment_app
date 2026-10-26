@@ -179,12 +179,13 @@ class LargeJudgmentTests(unittest.TestCase):
             get_judgment_pdf(JID, session=session)
         self.assertEqual(session.get.call_count, 1)
 
-    def test_rejects_error_response_instead_of_saving_pdf(self):
+    @patch("judgment_app.acquisition.web.time.sleep")
+    def test_rejects_error_response_instead_of_saving_pdf(self, sleep):
         for bad_response, error in ((response("<html>Error</html>"), RuntimeError),
                                     (response("unavailable", 503), requests.HTTPError)):
             with self.subTest(error=error):
                 session = Mock()
-                session.get.side_effect = [large_page(), bad_response]
+                session.get.side_effect = [large_page(), bad_response, bad_response, bad_response]
                 with self.assertRaises(error):
                     get_judgment_pdf(JID, session=session)
 
@@ -237,21 +238,18 @@ class LargeJudgmentTests(unittest.TestCase):
             self.assertFalse(report["errors"])
             self.assertEqual(session.get.call_count, 1)
 
-    def test_failed_fallback_records_case_without_creating_files(self):
+    @patch("judgment_app.acquisition.web.time.sleep")
+    def test_failed_fallback_records_case_without_creating_files(self, sleep):
         for status in (200, 404, 503):
             with self.subTest(status=status), TemporaryDirectory() as folder, \
                     patch("judgment_app.acquisition.web.case_to_jids", return_value=[JID]), \
                     patch("judgment_app.acquisition.web.requests.Session") as session_class:
                 session = session_class.return_value.__enter__.return_value
-                session.get.side_effect = [large_page(), response("error page", status)]
-                if status == 503:
-                    with self.assertRaises(requests.HTTPError):
-                        download_cases([JID.case_number], folder, web=True)
-                else:
-                    report = download_cases([JID.case_number], folder, web=True)
-                    self.assertEqual(len(report["errors"]), 1)
-                    self.assertEqual(report["failed_cases"], [JID.case_number])
-                    self.assertFalse(report["files"])
+                session.get.side_effect = [large_page()] + [response("error page", status) for _ in range(3)]
+                report = download_cases([JID.case_number], folder, web=True)
+                self.assertEqual(len(report["errors"]), 1)
+                self.assertEqual(report["failed_cases"], [JID.case_number])
+                self.assertFalse(report["files"])
                 self.assertEqual(list(Path(folder).iterdir()), [])
 
 

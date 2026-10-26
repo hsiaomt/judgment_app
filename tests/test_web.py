@@ -40,7 +40,7 @@ class WebJudgmentTests(unittest.TestCase):
     @patch("judgment_app.acquisition.web.case_to_jids")
     def test_api_only_searches_jid_and_saves_json(self, search, pdf, web, token, api):
         jid = "TPDM,114,訴,218,20250328,1"
-        search.return_value = [jid]
+        search.return_value = [JudgmentId.from_string(jid)]
         document = {"jid": jid, "JFULLX": {"JFULLCONTENT": "判決全文"}}
         api.return_value = document
         messages = []
@@ -50,7 +50,7 @@ class WebJudgmentTests(unittest.TestCase):
             self.assertFalse(report["errors"])
             self.assertEqual(len(report["files"]), 1)
             path = Path(report["files"][0])
-            self.assertEqual(path.name, "臺灣臺北地方法院114年度訴字第218號.json")
+            self.assertEqual(path.name, "臺灣臺北地方法院114年度訴字第218號_20250328_1.json")
             self.assertEqual(json.loads(path.read_text(encoding="utf-8")), document)
             api.assert_called_once_with("test-token", jid)
             token.assert_called_once()
@@ -64,10 +64,10 @@ class WebJudgmentTests(unittest.TestCase):
     @patch("judgment_app.acquisition.api.get_token")
     @patch("judgment_app.acquisition.web.get_judgment_web")
     @patch("judgment_app.acquisition.web.get_judgment_pdf", return_value=b"%PDF-test")
-    @patch("judgment_app.acquisition.web.case_to_jids", return_value=["TPDM,114,訴,218,20250328,1"])
+    @patch("judgment_app.acquisition.web.case_to_jids", return_value=[JudgmentId.from_string("TPDM,114,訴,218,20250328,1")])
     def test_existing_formats_skip_before_download(self, search, pdf, web, token):
         with TemporaryDirectory() as folder:
-            name = "臺灣臺北地方法院114年度訴字第218號"
+            name = "臺灣臺北地方法院114年度訴字第218號_20250328_1"
             for suffix in ('.txt', '.json'):
                 (Path(folder) / (name + suffix)).write_bytes(b'existing')
             messages = []
@@ -88,7 +88,7 @@ class WebJudgmentTests(unittest.TestCase):
             self.response('<html>Error</html>'),
         ]
         with self.assertRaisesRegex(RuntimeError, "不是 PDF"):
-            get_judgment_pdf("TPDM,114,訴,218,20250328,1", session=session)
+            get_judgment_pdf(JudgmentId.from_string("TPDM,114,訴,218,20250328,1"), session=session)
 
     def test_existing_file_is_not_overwritten(self):
         with TemporaryDirectory() as folder:
@@ -101,13 +101,13 @@ class WebJudgmentTests(unittest.TestCase):
     @patch("judgment_app.acquisition.api.get_token", return_value="test")
     @patch("judgment_app.acquisition.web.get_judgment_pdf", return_value=b"%PDF-test")
     @patch("judgment_app.acquisition.web.get_judgment_web", return_value={"text": "正文"})
-    @patch("judgment_app.acquisition.web.case_to_jids", return_value=["TPDM,114,訴,218,20250328,1", "TPDM,114,訴,218,20250428,1"])
+    @patch("judgment_app.acquisition.web.case_to_jids", return_value=[JudgmentId.from_string(raw) for raw in ("TPDM,114,訴,218,20250328,1", "TPDM,114,訴,218,20250428,1")])
     def test_all_modes_search_once_and_number_documents(self, search, web, pdf, token, api):
         with TemporaryDirectory() as folder:
             report = download_cases([CaseNumber(court="TPD", year=114, case="訴", number=218)], folder, web=True, pdf=True, api=True)
             self.assertEqual(len(report["files"]), 6)
             self.assertFalse(report["errors"])
-            self.assertTrue((Path(folder) / "臺灣臺北地方法院114年度訴字第218號_2.pdf").exists())
+            self.assertTrue((Path(folder) / "臺灣臺北地方法院114年度訴字第218號_20250428_1.pdf").exists())
             search.assert_called_once()
             token.assert_called_once()
 
@@ -117,7 +117,7 @@ class WebJudgmentTests(unittest.TestCase):
             '<meta charset="utf-8"><nav>導覽</nav>'
             '<div class="jud_content">判決<br>主文<script>noise</script></div>'
         )
-        result = get_judgment_web("TPDM,114,訴,218,20250328,1", session=session)
+        result = get_judgment_web(JudgmentId.from_string("TPDM,114,訴,218,20250328,1"), session=session)
         self.assertEqual(result["text"], "判決\n主文")
         session.close.assert_not_called()
 
@@ -125,7 +125,7 @@ class WebJudgmentTests(unittest.TestCase):
         session = Mock()
         session.get.return_value = self.response("<html>Access denied</html>")
         with self.assertRaisesRegex(RuntimeError, "找不到裁判正文"):
-            get_judgment_web("TPDM,114,訴,218,20250328,1", session=session)
+            get_judgment_web(JudgmentId.from_string("TPDM,114,訴,218,20250328,1"), session=session)
 
     def test_records_and_stops_on_rate_limit(self):
         records = []
@@ -165,7 +165,7 @@ class WebJudgmentTests(unittest.TestCase):
                              {"court": "TPD", "year": 114, "case": "訴", "number": 219})
             self.assertEqual(search.call_args.args, (case,))
 
-    @patch("judgment_app.acquisition.web.case_to_jids", return_value=["TPDM,114,訴,219,20250328,1"])
+    @patch("judgment_app.acquisition.web.case_to_jids", return_value=[JudgmentId.from_string("TPDM,114,訴,219,20250328,1")])
     @patch("judgment_app.acquisition.web.get_judgment_pdf", return_value=b"%PDF-test")
     def test_download_case_pdfs_accepts_case_number(self, pdf, search):
         case = CaseNumber("TPD", 114, "訴", 219)

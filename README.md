@@ -127,4 +127,37 @@ uv run python -m judgment_app.analysis.compare --excel data --json-dir data/judg
 
 刑度固定比較 `crimes` 各罪宣告刑，不比較應執行刑；先篩選 JSON 中有罪的 group，再定位法條、刑度、未遂、幫助並比較其他欄位；Excel「裁判情形」不參與比較。Excel 徒刑 YYMM 轉為月數（402 → 50）；刑度 0 視為 JSON null，未遂／幫助／累犯空白視為 false，法條空白或 x 視為 null。「案由」作為法規名稱，「毒品防制條例」對照「毒品危害防制條例」。
 
-報告包含 Excel 檔案、工作表、列號、JSON 路徑、差異欄位與雙方值。`equal` 為可比較欄位相同、`different` 為有差異、`unmatched` 為未配對、`ambiguous` 為多個候選、`incomplete` 為欄位缺漏、`invalid` 為資料格式錯誤。未涵蓋的 Excel 欄位列於 `sheets.uncompared_columns`；本工具以 Excel 各列為基準，不檢查 JSON 是否有額外被告或罪名。
+報告包含 Excel 檔案、工作表、列號、JSON 路徑、差異欄位與雙方值。`equal` 為可比較欄位相同、`different` 為有差異、`unmatched` 為未配對、`judgment_not_found` 為判決不存在（未找到可用的同案號 JSON）、`ambiguous` 為多個候選、`incomplete` 為欄位缺漏、`invalid` 為資料格式錯誤。未涵蓋的 Excel 欄位列於 `sheets.uncompared_columns`；本工具以 Excel 各列為基準，不檢查 JSON 是否有額外被告或罪名。
+
+### 比對完整 JudgmentAnalysis（執行明細）
+
+```bash
+uv run python -m judgment_app.analysis.compare_judgment --excel data/執行明細.xlsx --json-dir data/judgments --output data/judgment_comparison_report.json
+```
+
+新模組依 `data/執行明細.xlsx` 的標題與格式讀取，也接受 `.xls`／`.xlsx` 資料夾並遞迴搜尋。Excel 同案號、同姓名的各工作表與各檔案資料會一起彙整，建立 `JudgmentAnalysis` 後，以 Excel 被告為範圍逐人比對。原本的定位比對仍使用 `compare.py`。
+
+- 同一判決、同一被告內，「序號＋個案序號」相同代表同一 `CrimeAnalysis`，合併並去重法條；`times` 取「次數」，不按法條列數累加。
+- 同一被告內依「序號＋個案裁判情形」整理 group 配對條件；Excel 的「應執裁判情形」完全不使用，也不是必填標題。JSON group 以個案裁判情形配對，不比較雙方 `execution_groups` 長度，可共用同一 group，JSON 額外 group 不影響結果。無罪、免訴、不受理、免刑只需存在同裁判情形的 group；科刑仍比較應執行刑度與折算標準。
+- 先核對案號，再沿用 `compare.py` 的遮蔽姓名規則；每名 Excel 被告須在該份 JSON 中有唯一配對。JSON 額外被告及雙方被告總人數不影響結果。該被告的 `crimes` 不比較清單長度：每個 Excel 罪須有一個完整相符的 JSON 罪，可重用候選，JSON 額外罪不影響結果。單罪的 `times`、裁判情形、刑度、法條仍比較，不能從不同候選各取相符欄位；法條清單仍不計順序但保留數量。執行刑 group 採上述存在配對規則；無罪、免訴、不受理與免刑也比較。
+- 「上訴類別」任何非空值都代表 `is_pros_appeal=True`。空白時，地方法院且案號冠字無「上」視為一審並填 `None`，其餘填 `False`。
+
+忽略欄位：`lower_court_case_number`（需求中的 `lower_case_number`）、`confiscation`、`crime_ids`、`crime_id`、`crime_name`、`pros_appearing`、`appeal_result`、`addition_fine`、`addition_fine_to_detention`、`executed_addition_fine`、`executed_addition_fine_to_detention`。讀取 JSON 時先移除忽略的選填欄位，因此也能讀取仍含舊併科罰金欄位的資料；必要的 ID 與罪名仍接受模型驗證，只是不參與內容比較。
+
+格式轉換依執行明細表：
+
+| Excel 欄位 | 轉換方式 |
+| --- | --- |
+| 法條 | 九碼依序為條 3 碼、之 1 碼、條段 1 碼、項 1 碼、項段 1 碼、款 2 碼；例如 `3394x1x02` 為第 339 條之 4 第 1 項第 2 款，`000000000` 為無法條 |
+| 個案案由 | 沿用 `LawReference` 的法規名稱正規化 |
+| 個案徒刑／應執徒刑 | 年月日碼轉月數：`300` → 3 月、`10200` → 14 月；非零日數或月份不合法回報錯誤，不自行四捨五入 |
+| 應執緩刑期間 | 年月碼轉年數：`300` → 3 年；非整年回報錯誤 |
+| 易科／易勞標準 | `易科一仟折算`／`易勞一仟折算` → 1000，也支援二仟、三仟及數值 |
+| 刑度與金額 0 | 轉為 `None`；「次數」必須大於 0 |
+
+表中沒有未遂、幫助欄位，預設 `false`；可增補「未遂／幫助」欄位，支援原比對器的布林值格式。其他缺少的選填欄位採模型預設值，仍參與比較，不視為萬用值。報告的 `sheets.defaulted_fields` 列出缺少來源欄位而採預設的欄位，`sheets.uncompared_columns` 列出未使用的 Excel 標題。
+
+每案的每名 Excel 被告各產生一筆結果，包含 `name`、`excel_rows` 與各份同案號 JSON 的 `document_results`；該被告在任一份同案號 JSON 中唯一配對且內容相同，即為 `equal`，未找到可用的同案號 JSON 時為 `judgment_not_found`（reason 保留「判決不存在」），其他不合為 `unmatched`。`differences` 列出差異路徑與 Excel／JSON 的值。同一罪、同一組或同一被告的資料若跨列衝突，僅該被告回報錯誤並附序號、個案序號，其他被告仍獨立比對。此工具另存 JSON 報告，並將各被告的結果回寫至該被告每一個來源列的 `status`、`reason` 欄位；統計以各案的 Excel 被告為單位（無法辨識案號的錯誤列另計），不檢查 JSON 資料夾的其他案號。
+
+
+兩種比對器的 Excel 輸出方式相同：`.xlsx` 回寫原檔，`.xls` 另存為 `原檔名.status.xlsx`（已存在則加流水號）。`status` 固定填入 `equal`、`unmatched` 或 `judgment_not_found`，`reason` 填入原因，`equal` 的原因留空。重跑會更新既有欄位、清除已無資料列的舊結果，不重複增加欄位。輸出路徑記錄於報告的 `excel_outputs`。
