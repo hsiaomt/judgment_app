@@ -8,7 +8,7 @@ import re
 import pandas as pd
 
 from judgment_app.analysis.analysis_models import (
-    CrimeAnalysis, DefendantAnalysis, ExecutionGroup, JudgmentAnalysis, LawReference,
+    AnalysisModel, CrimeAnalysis, DefendantAnalysis, ExecutionGroup, JudgmentAnalysis, LawReference,
 )
 from judgment_app.analysis.comparison_models import ComparisonReport
 from judgment_app.analysis.compare_common import (
@@ -21,9 +21,10 @@ from judgment_app.paths import resolve_output_path
 
 
 IGNORED_FIELDS = frozenset({
-    "lower_court_case_number", "confiscation",
+    "lower_court_case_number", "pros_appearing",
+    "appeal_result", "confiscation",
     "crime_ids", "crime_id", "crime_name",
-    "pros_appearing", "appeal_result",
+
 })
 FIELD_MAP = {
     "累犯": "is_recidivist", "應執緩刑期間": "probation", "緩刑法條": "probation_law",
@@ -47,7 +48,7 @@ for _fields in SCALAR_FIELDS.values():
     FIELD_MAP.update({field: field for field in _fields})
 FIELD_MAP.update(is_attempted="is_attempted", is_accessory="is_accessory")
 REQUIRED_COLUMNS = IDENTITY_COLUMNS | {
-    "序號", "個案序號", "個案裁判情形", "次數", "個案案由", "法條",
+    "序號", "個案序號", "個案裁判情形", "應執裁判情形", "次數", "個案案由", "法條",
 }
 RATE_VALUES = {
     f"{prefix}{number}折算": value
@@ -73,7 +74,7 @@ def main() -> None:
 
 
 def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
-    """依案號、Excel 被告姓名分別比對；各被告獨立產生結果並回寫來源列。"""
+    """依案號建立完整物件，再依 Excel 序號分別比對被告；各被告獨立產生結果並回寫來源列。"""
     report = {"rows": [], "errors": [], "sheets": [], "excel_outputs": [],
               "ignored_fields": sorted(IGNORED_FIELDS)}
     index = load_analyses(Path(json_path), report["errors"])
@@ -82,22 +83,29 @@ def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
     for case, records in cases.items():
         defendants = {}
         for row, location in records:
-            defendants.setdefault(_text(row.get("姓名")), []).append((row, location))
-        for name, defendant_records in defendants.items():
-            context = {"case_number": case.to_string(), "name": name,
+            defendants.setdefault(_required_id(row, "序號"), []).append((row, location))
+        build_errors = {}
+        expected = build_judgment_analysis(
+            case.to_string(), [row for row, _ in records], errors=build_errors,
+        )
+        comparisons = [(source, compare_analyses(expected, actual))
+                       for source, actual in index.get(case, [])]
+        valid_positions = iter(range(len(expected.defendants)))
+        for sequence, defendant_records in defendants.items():
+            name = _text(defendant_records[0][0].get("姓名"))
+            context = {"case_number": expected.case_number, "name": name,
                        "excel_rows": [location for _, location in defendant_records]}
-            if not index.get(case):
-                report["rows"].append({**context, "status": "judgment_not_found", "reason": "判決不存在"})
-                continue
-            try:
-                expected = build_judgment_analysis(case.to_string(), [row for row, _ in defendant_records])
-            except (ValueError, TypeError, KeyError) as exc:
-                reason = f"{type(exc).__name__}: {exc}"
+            if sequence in build_errors:
+                reason = build_errors[sequence]
                 report["errors"].append({**context, "stage": "build_judgment", "error": reason})
                 report["rows"].append({**context, "status": "unmatched", "reason": reason})
                 continue
-            documents = [{"json": str(source), **compare_analyses(expected, actual)}
-                         for source, actual in index[case]]
+            position = next(valid_positions)
+            if not comparisons:
+                report["rows"].append({**context, "status": "judgment_not_found", "reason": "判決不存在"})
+                continue
+            documents = [{"json": str(source), **result["defendant_results"][position]}
+                         for source, result in comparisons]
             if any(document["status"] == "equal" for document in documents):
                 result = {"status": "equal", "document_results": documents}
             else:
@@ -108,59 +116,40 @@ def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
     return ComparisonReport.model_validate(report).to_dict()
 
 
-def build_judgment_analysis(case_number: str, rows: list[dict]) -> JudgmentAnalysis:
-    """同一被告內以 (序號, 個案序號) 建罪，以序號及個案裁判情形建立配對條件。"""
+def compare_analyses(expected: JudgmentAnalysis, actual: JudgmentAnalysis) -> dict:
+    """統一物件比對入口；回傳整案結果及依 expected.defendants 順序排列的 defendant_results。"""
+    left = CaseNumber.from_string(expected.case_number).to_string()
+    right = CaseNumber.from_string(actual.case_number).to_string()
+    if left != right:
+        result = {"status": "unmatched", "reason": "case_number 不合",
+                  "differences": _differences(left, right, "case_number")}
+        return {**result, "defendant_results": [dict(result) for _ in expected.defendants]}
+    defendant_results = [_compare_defendant(defendant, actual.defendants, index)
+                         for index, defendant in enumerate(expected.defendants)]
+    differences = []
+    for result in defendant_results:
+        if result["status"] != "equal" and "differences" not in result:
+            return {**result, "defendant_results": defendant_results}
+        differences.extend(result["differences"])
+    return {**_comparison_result(differences), "defendant_results": defendant_results}
+
+
+def build_judgment_analysis(case_number: str, rows: list[dict], *,
+                            errors: dict[int, str] | None = None) -> JudgmentAnalysis:
+    """同案號一個判決、同序號一個被告；提供 errors 時隔離並記錄無效被告。"""
     case = CaseNumber.from_string(case_number)
-    defendants = {}
+    grouped_rows = {}
     for row in rows:
+        grouped_rows.setdefault(_required_id(row, "序號"), []).append(row)
+    defendants = []
+    for sequence, defendant_rows in grouped_rows.items():
         try:
-            sequence = _required_id(row, "序號")
-            crime_sequence = _required_id(row, "個案序號")
-            name = _text(row.get("姓名"))
-            if not name:
-                raise ValueError("被告姓名不可空白")
-            values = _row_values(row, case)
-            state = defendants.setdefault(name, {"values": {}, "crimes": {}, "groups": {}})
-            _merge_values(state["values"], _select(values, DefendantAnalysis))
-            crime = CrimeAnalysis(
-                crime_id=1, crime_name="Excel", laws=None, **_select(values, CrimeAnalysis),
-            )
-            group = ExecutionGroup(crime_ids=[1], **{
-                **_select(values, ExecutionGroup), "executed_jsst": crime.crime_jsst,
-            })
-            group_key = (sequence, crime.crime_jsst)
-            law = excel_row_to_law_reference(row)
-            key = (sequence, crime_sequence)
-            if key in state["crimes"]:
-                existing = state["crimes"][key]
-                if _canonical(existing.model_dump(exclude={"laws"})) != _canonical(crime.model_dump(exclude={"laws"})):
-                    raise ValueError("同一罪的裁判情形、次數或刑度等欄位不一致")
-                if (existing.laws is None) != (law is None):
-                    raise ValueError("同一罪的法條同時有空值與非空值")
-                if law is not None and law not in existing.laws:
-                    existing.laws.append(law)
-            else:
-                crime.crime_id = len(state["crimes"]) + 1
-                crime.laws = [law] if law is not None else None
-                state["crimes"][key] = crime
-            crime_id = state["crimes"][key].crime_id
-            if group_key in state["groups"]:
-                existing_group = state["groups"][group_key]
-                if _canonical(existing_group.model_dump()) != _canonical(group.model_dump()):
-                    raise ValueError("同一序號的應執行刑欄位不一致")
-                if crime_id not in existing_group.crime_ids:
-                    existing_group.crime_ids.append(crime_id)
-            else:
-                group.crime_ids = [crime_id]
-                state["groups"][group_key] = group
+            defendants.append(_build_defendant(case, defendant_rows))
         except (ValueError, TypeError, KeyError) as exc:
-            raise ValueError(f"序號={_text(row.get('序號'))}、個案序號={_text(row.get('個案序號'))}：{exc}") from exc
-    return JudgmentAnalysis(
-        case_number=case.to_string(),
-        defendants=[DefendantAnalysis(name=name, crimes=list(state["crimes"].values()),
-                                      execution_groups=list(state["groups"].values()), **state["values"])
-                    for name, state in defendants.items()],
-    )
+            if errors is None:
+                raise
+            errors[sequence] = f"{type(exc).__name__}: {exc}"
+    return JudgmentAnalysis(case_number=case.to_string(), defendants=defendants)
 
 
 def excel_row_to_law_reference(row: dict) -> LawReference | None:
@@ -185,74 +174,28 @@ def excel_row_to_law_reference(row: dict) -> LawReference | None:
     )
 
 
-def compare_analyses(expected: JudgmentAnalysis, actual: JudgmentAnalysis) -> dict:
-    """先核對案號，再比對 Excel 指定的被告；忽略 JSON 額外被告及雙方被告人數。"""
-    left, right = expected.model_dump(), actual.model_dump()
-    left["case_number"] = CaseNumber.from_string(expected.case_number).to_string()
-    right["case_number"] = CaseNumber.from_string(actual.case_number).to_string()
-    if left["case_number"] != right["case_number"]:
-        return {"status": "unmatched", "reason": "case_number 不合",
-                "differences": _differences(left["case_number"], right["case_number"], "case_number")}
-    ordered, collection_differences = [], []
-    for defendant in left["defendants"]:
-        candidates = [i for i, other in enumerate(actual.defendants)
-                      if matches_defendant_name(defendant["name"], other.name)]
-        if len(candidates) != 1:
-            return {"status": "unmatched", "reason": f"被告姓名無法唯一配對：{defendant['name']}"}
-        position = candidates[0]
-        other = actual.defendants[position].model_dump()
-        other["name"] = defendant["name"]
-        collection_differences.extend(_crime_differences(
-            defendant.pop("crimes"), other.pop("crimes"),
-            f"defendants[{len(ordered)}].crimes[]",
-        ))
-        collection_differences.extend(_execution_group_differences(
-            defendant.pop("execution_groups"), other.pop("execution_groups"),
-            f"defendants[{len(ordered)}].execution_groups",
-        ))
-        ordered.append(other)
-    right["defendants"] = ordered
-    differences = _differences(left, right) + collection_differences
-    if differences:
-        fields = dict.fromkeys(field for difference in differences for field in _difference_fields(
-            difference["excel"], difference["json"], difference["field"],
-        ))
-        reason = "；".join(f"{field} 不合" for field in fields)
-        return {"status": "unmatched", "reason": reason, "differences": differences}
-    return {"status": "equal", "differences": []}
-
-
-def _crime_differences(expected: list[dict], actual: list[dict], path: str) -> list[dict]:
-    """每個 Excel 罪須有完整相符的 JSON 罪；不比較罪清單長度，可重用候選。"""
-    differences = []
-    for crime in expected:
-        if not actual:
-            differences.append({"field": path, "excel": crime, "json": None})
+def _write_comparison_results(report: dict, workbooks: dict, progress) -> None:
+    """將各被告結果寫回其來源列；格式錯誤列則寫入該列自己的結果。"""
+    for result in report["rows"]:
+        for location in result.get("excel_rows", [result]):
+            state = workbooks[Path(location["excel"])]
+            statuses = state["statuses"][location["sheet"]][1]
+            statuses[location["row"]] = {"status": result["status"], "reason": result.get("reason")}
+    for source, state in workbooks.items():
+        if state["legacy_tables"] is not None and state["unread_sheets"]:
+            report["errors"].append({"file": str(source), "stage": "write_excel",
+                "error": f"未另存 xlsx，避免遺漏讀取失敗的工作表：{'、'.join(state['unread_sheets'])}"})
             continue
-        results = [_differences(crime, candidate, path) for candidate in actual]
-        if all(results):
-            differences.extend(min(results, key=len))
-    return differences
-
-
-def _execution_group_differences(expected: list[dict], actual: list[dict], path: str) -> list[dict]:
-    """各 Excel 組尋找符合個案裁判情形的 group；不限制組數或一對一配對。"""
-    differences = []
-    for index, group in enumerate(expected):
-        candidates = [candidate for candidate in actual
-                      if candidate["executed_jsst"] == group["executed_jsst"]]
-        if not candidates:
-            differences.append({"field": f"{path}[{index}].executed_jsst",
-                                "excel": group["executed_jsst"],
-                                "json": sorted({candidate["executed_jsst"] for candidate in actual})})
+        if not state["statuses"]:
             continue
-        # 無罪、免訴、不受理、免刑只需存在對應裁判情形的 group。
-        if group["executed_jsst"] != "科刑":
-            continue
-        results = [_differences(group, candidate, f"{path}[{index}]") for candidate in candidates]
-        if all(results):
-            differences.extend(min(results, key=len))
-    return differences
+        try:
+            if progress:
+                progress(f"正在寫入 Excel 比對結果：{source.name}")
+            output = write_excel_statuses(source, state["statuses"], legacy_tables=state["legacy_tables"])
+            report["excel_outputs"].append({"source": str(source), "output": str(output)})
+        except Exception as exc:
+            report["errors"].append({"file": str(source), "stage": "write_excel",
+                                     "error": f"{type(exc).__name__}: {exc}"})
 
 
 def _read_excel_cases(path: Path, report: dict, progress, *, workbooks: dict | None = None) -> dict:
@@ -284,11 +227,12 @@ def _read_excel_cases(path: Path, report: dict, progress, *, workbooks: dict | N
                         report["sheets"].append({
                             "file": str(source), "sheet": sheet,
                             "uncompared_columns": [column for column in columns if column not in
-                                (set(FIELD_MAP) - {"應執裁判情形", "executed_jsst"}) | REQUIRED_COLUMNS | {"上訴類別"}],
+                                set(FIELD_MAP) | REQUIRED_COLUMNS | {"上訴類別"}],
                             "defaulted_fields": sorted(defaulted),
                         })
                         for row, location in iter_excel_rows(table, header, columns, source, sheet):
                             try:
+                                _required_id(row, "序號")
                                 case = CaseNumber(_text(row["裁判機關"]), _non_negative_integer(row["裁判年度"]),
                                                   _text(row["裁判冠字"]), _non_negative_integer(row["裁判號數"]))
                             except (ValueError, TypeError, KeyError) as exc:
@@ -308,28 +252,204 @@ def _read_excel_cases(path: Path, report: dict, progress, *, workbooks: dict | N
     return cases
 
 
-def _write_comparison_results(report: dict, workbooks: dict, progress) -> None:
-    """將各被告結果寫回其來源列；格式錯誤列則寫入該列自己的結果。"""
-    for result in report["rows"]:
-        for location in result.get("excel_rows", [result]):
-            state = workbooks[Path(location["excel"])]
-            statuses = state["statuses"][location["sheet"]][1]
-            statuses[location["row"]] = {"status": result["status"], "reason": result.get("reason")}
-    for source, state in workbooks.items():
-        if state["legacy_tables"] is not None and state["unread_sheets"]:
-            report["errors"].append({"file": str(source), "stage": "write_excel",
-                "error": f"未另存 xlsx，避免遺漏讀取失敗的工作表：{'、'.join(state['unread_sheets'])}"})
+def _compare_defendant(expected: DefendantAnalysis, actual: list[DefendantAnalysis],
+                       index: int = 0) -> dict:
+    """姓名符合的候選中，只要有一位完整相符即通過，不跨被告拼接欄位。"""
+    candidates = [other for other in actual if matches_defendant_name(expected.name, other.name)]
+    if not candidates:
+        return {"status": "unmatched", "reason": f"找不到姓名相符的被告：{expected.name}"}
+    path = f"defendants[{index}]"
+    results = []
+    for other in candidates:
+        differences = [difference for field in sorted(SCALAR_FIELDS[DefendantAnalysis])
+                       for difference in _differences(getattr(expected, field), getattr(other, field),
+                                                      f"{path}.{field}")]
+        differences.extend(_crime_differences(expected.crimes, other.crimes, f"{path}.crimes[]"))
+        differences.extend(_execution_group_differences(
+            expected.execution_groups, other.execution_groups, f"{path}.execution_groups",
+        ))
+        if not differences:
+            return _comparison_result([])
+        results.append(differences)
+    return _comparison_result(min(results, key=len))
+
+
+def _comparison_result(differences: list[dict]) -> dict:
+    if differences:
+        fields = dict.fromkeys(field for difference in differences for field in _difference_fields(
+            difference["excel"], difference["json"], difference["field"],
+        ))
+        reason = "；".join(f"{field} 不合" for field in fields)
+        return {"status": "unmatched", "reason": reason, "differences": differences}
+    return {"status": "equal", "differences": []}
+
+
+def _difference_fields(expected, actual, path: str) -> list[str]:
+    """清單以欄位值的集合（保留次數）說明差異，不猜測不同罪的配對關係。"""
+    if _equal_values(expected, actual):
+        return []
+    if isinstance(expected, list) and isinstance(actual, list):
+        if len(expected) != len(actual):
+            return [f"{path}.length（數量）"]
+        items = expected + actual
+        if items and all(isinstance(item, dict) for item in items):
+            keys = sorted(set().union(*(item.keys() for item in items)) - IGNORED_FIELDS)
+            fields = [field for key in keys for field in _difference_fields(
+                [item.get(key) for item in expected], [item.get(key) for item in actual], f"{path}[].{key}",
+            )]
+            return fields or [f"{path}（欄位配對關係）"]
+        if items and all(isinstance(item, list) for item in items):
+            fields = _difference_fields(
+                [value for item in expected for value in item],
+                [value for item in actual for value in item], path,
+            )
+            return fields or [f"{path}（分組關係）"]
+    return [path]
+
+
+def _execution_group_differences(expected: list[ExecutionGroup], actual: list[ExecutionGroup], path: str) -> list[dict]:
+    """各 Excel 組尋找符合應執裁判情形的 group；不限制組數或一對一配對。"""
+    differences = []
+    for index, group in enumerate(expected):
+        candidates = [candidate for candidate in actual
+                      if candidate.executed_jsst == group.executed_jsst]
+        if not candidates:
+            differences.append({"field": f"{path}[{index}].executed_jsst",
+                                "excel": group.executed_jsst,
+                                "json": sorted({candidate.executed_jsst for candidate in actual})})
             continue
-        if not state["statuses"]:
+        # 無罪、免訴、不受理、免刑只需存在對應裁判情形的 group。
+        if group.executed_jsst != "科刑":
             continue
+        results = [_differences(group, candidate, f"{path}[{index}]") for candidate in candidates]
+        if all(results):
+            differences.extend(min(results, key=len))
+    return differences
+
+
+def _crime_differences(expected: list[CrimeAnalysis], actual: list[CrimeAnalysis], path: str) -> list[dict]:
+    """每個 Excel 罪須有完整相符的 JSON 罪；不比較罪清單長度，可重用候選。"""
+    differences = []
+    for crime in expected:
+        if not actual:
+            differences.append({"field": path, "excel": _report_value(crime), "json": None})
+            continue
+        results = [_differences(crime, candidate, path) for candidate in actual]
+        if all(results):
+            differences.extend(min(results, key=len))
+    return differences
+
+
+def _differences(expected, actual, path: str = "") -> list[dict]:
+    if _equal_values(expected, actual):
+        return []
+    if isinstance(expected, AnalysisModel) and type(expected) is type(actual):
+        return [difference for field in sorted(type(expected).model_fields) if field not in IGNORED_FIELDS
+                for difference in _differences(getattr(expected, field), getattr(actual, field),
+                                                f"{path}.{field}" if path else field)]
+    return [{"field": path, "excel": _report_value(expected), "json": _report_value(actual)}]
+
+
+def _equal_values(expected, actual) -> bool:
+    """直接比較模型屬性；清單忽略順序但保留重複次數。"""
+    if type(expected) is not type(actual):
+        return False
+    if isinstance(expected, AnalysisModel):
+        return all(_equal_values(getattr(expected, field), getattr(actual, field))
+                   for field in type(expected).model_fields if field not in IGNORED_FIELDS)
+    if isinstance(expected, dict):
+        return all(_equal_values(expected.get(key), actual.get(key))
+                   for key in expected.keys() | actual.keys() if key not in IGNORED_FIELDS)
+    if isinstance(expected, list):
+        if len(expected) != len(actual):
+            return False
+        remaining = list(actual)
+        for item in expected:
+            for index, candidate in enumerate(remaining):
+                if _equal_values(item, candidate):
+                    remaining.pop(index)
+                    break
+            else:
+                return False
+        return True
+    return expected == actual
+
+
+def _report_value(value):
+    """僅在產生差異報告時將模型轉成可輸出的資料。"""
+    if isinstance(value, AnalysisModel):
+        return {field: _report_value(getattr(value, field))
+                for field in type(value).model_fields if field not in IGNORED_FIELDS}
+    if isinstance(value, list):
+        return [_report_value(item) for item in value]
+    return value
+
+
+def _build_defendant(case: CaseNumber, rows: list[dict]) -> DefendantAnalysis:
+    """同個案序號合併法條；依應執裁判情形及三種折算標準分組。"""
+    state = {"values": {}, "crimes": {}, "groups": {}}
+    name = _text(rows[0].get("姓名"))
+    for row in rows:
         try:
-            if progress:
-                progress(f"正在寫入 Excel 比對結果：{source.name}")
-            output = write_excel_statuses(source, state["statuses"], legacy_tables=state["legacy_tables"])
-            report["excel_outputs"].append({"source": str(source), "output": str(output)})
-        except Exception as exc:
-            report["errors"].append({"file": str(source), "stage": "write_excel",
-                                     "error": f"{type(exc).__name__}: {exc}"})
+            crime_sequence = _required_id(row, "個案序號")
+            if not name:
+                raise ValueError("被告姓名不可空白")
+            if _text(row.get("姓名")) != name:
+                raise ValueError("同一序號的被告姓名不一致")
+            values = _row_values(row, case)
+            _merge_values(state["values"], _select(values, DefendantAnalysis))
+            crime = CrimeAnalysis(
+                crime_id=1, crime_name="Excel", laws=None, **_select(values, CrimeAnalysis),
+            )
+            group = ExecutionGroup(crime_ids=[1], **_select(values, ExecutionGroup))
+            group_key = (group.executed_jsst, group.executed_penalty_to_fine,
+                         group.executed_detention_to_fine, group.executed_fine_to_detention)
+            law = excel_row_to_law_reference(row)
+            if crime_sequence in state["crimes"]:
+                existing = state["crimes"][crime_sequence]
+                if any(getattr(existing, field) != getattr(crime, field)
+                       for field in SCALAR_FIELDS[CrimeAnalysis]):
+                    raise ValueError("同一罪的裁判情形、次數或刑度等欄位不一致")
+                if (existing.laws is None) != (law is None):
+                    raise ValueError("同一罪的法條同時有空值與非空值")
+                if law is not None and law not in existing.laws:
+                    existing.laws.append(law)
+            else:
+                crime.crime_id = len(state["crimes"]) + 1
+                crime.laws = [law] if law is not None else None
+                state["crimes"][crime_sequence] = crime
+            crime_id = state["crimes"][crime_sequence].crime_id
+            if group_key in state["groups"]:
+                existing_group = state["groups"][group_key]
+                if any(getattr(existing_group, field) != getattr(group, field)
+                       for field in SCALAR_FIELDS[ExecutionGroup]):
+                    raise ValueError("同一應執行刑分組的刑度欄位不一致")
+                if crime_id not in existing_group.crime_ids:
+                    existing_group.crime_ids.append(crime_id)
+            else:
+                group.crime_ids = [crime_id]
+                state["groups"][group_key] = group
+        except (ValueError, TypeError, KeyError) as exc:
+            raise ValueError(f"序號={_text(row.get('序號'))}、個案序號={_text(row.get('個案序號'))}：{exc}") from exc
+    return DefendantAnalysis(name=name, crimes=list(state["crimes"].values()),
+                             execution_groups=list(state["groups"].values()), **state["values"])
+
+
+def _merge_values(target: dict, values: dict) -> None:
+    for field, value in values.items():
+        if field in target and target[field] != value:
+            raise ValueError(f"同一判決／被告的 {field} 在不同列不一致")
+        target[field] = value
+
+
+def _required_id(row: dict, column: str) -> int:
+    if _is_blank(row.get(column)):
+        raise ValueError(f"{column}不可空白")
+    return _non_negative_integer(row[column])
+
+
+def _select(values: dict, model) -> dict:
+    return {field: values[field] for field in SCALAR_FIELDS[model] if field in values}
 
 
 def _row_values(row: dict, case: CaseNumber) -> dict:
@@ -337,7 +457,7 @@ def _row_values(row: dict, case: CaseNumber) -> dict:
     supplied = set()
     for column, raw in row.items():
         field = FIELD_MAP.get(column)
-        if field is None or field == "executed_jsst":
+        if field is None:
             continue
         text = excel_optional_text(raw)
         if field in {"is_recidivist", "is_attempted", "is_accessory", "is_pros_appeal"}:
@@ -377,70 +497,6 @@ def _prison_months(value) -> int | None:
     if months >= 12 or days:
         raise ValueError(f"徒刑年月日無法轉為整月：{value}")
     return years * 12 + months or None
-
-
-def _required_id(row: dict, column: str) -> int:
-    if _is_blank(row.get(column)):
-        raise ValueError(f"{column}不可空白")
-    return _non_negative_integer(row[column])
-
-
-def _select(values: dict, model) -> dict:
-    return {field: values[field] for field in SCALAR_FIELDS[model] if field in values}
-
-
-def _merge_values(target: dict, values: dict) -> None:
-    for field, value in values.items():
-        if field in target and _canonical(target[field]) != _canonical(value):
-            raise ValueError(f"同一判決／被告的 {field} 在不同列不一致")
-        target[field] = value
-
-
-def _normalized(value):
-    if isinstance(value, dict):
-        return {key: _normalized(item) for key, item in value.items() if key not in IGNORED_FIELDS}
-    if isinstance(value, list):
-        return sorted((_normalized(item) for item in value), key=lambda item: json.dumps(item, ensure_ascii=False, sort_keys=True))
-    return value
-
-
-def _canonical(value) -> str:
-    return json.dumps(_normalized(value), ensure_ascii=False, sort_keys=True)
-
-
-def _difference_fields(expected, actual, path: str) -> list[str]:
-    """清單以欄位值的集合（保留次數）說明差異，不猜測不同罪的配對關係。"""
-    if _canonical(expected) == _canonical(actual):
-        return []
-    if isinstance(expected, list) and isinstance(actual, list):
-        if len(expected) != len(actual):
-            return [f"{path}.length（數量）"]
-        items = expected + actual
-        if items and all(isinstance(item, dict) for item in items):
-            keys = sorted(set().union(*(item.keys() for item in items)) - IGNORED_FIELDS)
-            fields = [field for key in keys for field in _difference_fields(
-                [item.get(key) for item in expected], [item.get(key) for item in actual], f"{path}[].{key}",
-            )]
-            return fields or [f"{path}（欄位配對關係）"]
-        if items and all(isinstance(item, list) for item in items):
-            fields = _difference_fields(
-                [value for item in expected for value in item],
-                [value for item in actual for value in item], path,
-            )
-            return fields or [f"{path}（分組關係）"]
-    return [path]
-
-
-def _differences(expected, actual, path: str = "") -> list[dict]:
-    if _canonical(expected) == _canonical(actual):
-        return []
-    if isinstance(expected, dict) and isinstance(actual, dict):
-        return [difference for key in sorted(expected.keys() | actual.keys()) if key not in IGNORED_FIELDS
-                for difference in _differences(expected.get(key), actual.get(key), f"{path}.{key}" if path else key)]
-    if path == "defendants" and len(expected) == len(actual):
-        return [difference for i, (left, right) in enumerate(zip(expected, actual))
-                for difference in _differences(left, right, f"{path}[{i}]")]
-    return [{"field": path, "excel": _normalized(expected), "json": _normalized(actual)}]
 
 
 if __name__ == "__main__":

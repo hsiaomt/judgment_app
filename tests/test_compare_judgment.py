@@ -73,7 +73,7 @@ class CompareJudgmentTests(unittest.TestCase):
         self.assertEqual(report["rows"][0]["excel_rows"][0]["row"], 4)
         self.assertEqual(report["sheets"][0]["defaulted_fields"], ["is_accessory", "is_attempted"])
 
-    def test_composite_key_merges_laws_without_multiplying_times(self):
+    def test_same_crime_sequence_merges_laws_without_multiplying_times(self):
         second = {**self.row, "法條": "0190x1B00"}
         law = {"law_name": "刑法", "article": 19, "paragraph": 1, "paragraph_part": "B",
                "is_attempted": False, "is_accessory": False}
@@ -96,15 +96,54 @@ class CompareJudgmentTests(unittest.TestCase):
         self.assertEqual(analysis.defendants[0].execution_groups[0].crime_ids, [1, 2])
         self.assertEqual(self.run_report(rows)["rows"][0]["status"], "equal")
 
-    def test_different_sequences_same_crime_sequence_are_distinct(self):
-        defendant = self.data["defendants"][0]
-        defendant["crimes"].append({**deepcopy(defendant["crimes"][0]), "crime_id": 10})
-        defendant["execution_groups"].append({**defendant["execution_groups"][0], "crime_ids": [10]})
-        rows = [self.row, {**self.row, "序號": 22598268}]
+    def test_different_sequences_same_name_are_distinct_defendants(self):
+        rows = [self.row, {**self.row, "序號": 22598268, "次數": 3}]
         analysis = build_judgment_analysis(self.case, rows)
-        self.assertEqual(len(analysis.defendants[0].crimes), 2)
-        self.assertEqual(len(analysis.defendants[0].execution_groups), 2)
-        self.assertEqual(self.run_report(rows)["rows"][0]["status"], "equal")
+        self.assertEqual(len(analysis.defendants), 2)
+        self.assertEqual([d.name for d in analysis.defendants], ["陳○○", "陳○○"])
+        self.assertEqual([len(d.crimes) for d in analysis.defendants], [1, 1])
+        self.assertEqual([d.crimes[0].times for d in analysis.defendants], [2, 3])
+        self.assertEqual([d.execution_groups[0].crime_ids for d in analysis.defendants], [[1], [1]])
+        report = self.run_report(rows)
+        self.assertEqual([r["status"] for r in report["rows"]], ["equal", "unmatched"])
+
+    def test_same_sequence_conflicting_names_are_invalid(self):
+        rows = [self.row, {**self.row, "姓名": "李○○"}]
+        with self.assertRaisesRegex(ValueError, "同一序號的被告姓名不一致"):
+            build_judgment_analysis(self.case, rows)
+        report = self.run_report(rows)
+        self.assertEqual(report["summary"], {"unmatched": 1, "total": 1, "errors": 1})
+        self.assertEqual(len(report["rows"][0]["excel_rows"]), 2)
+
+    def test_each_execution_rate_separates_groups(self):
+        for column, field in (("應執徒刑易科標準", "executed_penalty_to_fine"),
+                              ("應執拘役易科標準", "executed_detention_to_fine"),
+                              ("應執罰金易勞標準", "executed_fine_to_detention")):
+            with self.subTest(column=column):
+                rows = [self.row, {**self.row, "個案序號": 2, column: 2000, "應執徒刑": 10600}]
+                analysis = build_judgment_analysis(self.case, rows)
+                defendant = analysis.defendants[0]
+                self.assertEqual(len(defendant.execution_groups), 2)
+                self.assertEqual([g.crime_ids for g in defendant.execution_groups], [[1], [2]])
+                self.assertEqual(getattr(defendant.execution_groups[1], field), 2000)
+                self.assertEqual(defendant.execution_groups[1].executed_penalty, 18)
+                self.data = analysis.to_dict()
+                self.assertEqual(self.run_report(rows)["rows"][0]["status"], "equal")
+                self.data["defendants"][0]["execution_groups"].pop()
+                self.assertEqual(self.run_report(rows)["rows"][0]["status"], "unmatched")
+
+    def test_equivalent_execution_rates_share_group(self):
+        rows = [self.row, {**self.row, "個案序號": 2, "應執徒刑易科標準": 1000}]
+        defendant = build_judgment_analysis(self.case, rows).defendants[0]
+        self.assertEqual(len(defendant.execution_groups), 1)
+        self.assertEqual(defendant.execution_groups[0].crime_ids, [1, 2])
+
+    def test_same_crime_is_referenced_by_multiple_groups(self):
+        rows = [self.row, {**self.row, "法條": "0190x1B00", "應執徒刑易科標準": 2000}]
+        defendant = build_judgment_analysis(self.case, rows).defendants[0]
+        self.assertEqual(len(defendant.crimes), 1)
+        self.assertEqual(len(defendant.crimes[0].laws), 2)
+        self.assertEqual([g.crime_ids for g in defendant.execution_groups], [[1], [1]])
 
     def test_every_ignored_field(self):
         self.data.update(lower_court_case_number="前審", pros_appearing=["檢察官"])
@@ -234,14 +273,39 @@ class CompareJudgmentTests(unittest.TestCase):
         self.assertIn('crimes[].times', report['rows'][0]['reason'])
         self.assertNotIn('crimes.length', report['rows'][0]['reason'])
 
-    def test_each_excel_name_must_have_one_candidate(self):
+    def test_any_complete_matching_defendant_passes_regardless_of_order(self):
         other = deepcopy(self.data["defendants"][0])
         other.update(name="陳大華", probation=5)
-        self.data["defendants"].append(other)
-        self.assertIn("被告姓名無法唯一配對", self.run_report()["rows"][0]["reason"])
+        self.data["defendants"].insert(0, other)
+        self.assertEqual(self.run_report()["rows"][0]["status"], "equal")
+        self.data["defendants"].reverse()
+        self.assertEqual(self.run_report()["rows"][0]["status"], "equal")
         self.data["defendants"].pop()
-        report = self.run_report([self.row, {**self.row, "姓名": "陳小○"}])
+        report = self.run_report([self.row, {**self.row, "序號": 22598268, "姓名": "陳小○"}])
         self.assertEqual([result['status'] for result in report['rows']], ['equal', 'equal'])
+
+    def test_multiple_candidates_cannot_combine_fields_and_report_closest(self):
+        other = deepcopy(self.data['defendants'][0])
+        other.update(name='陳大華', probation=5)
+        self.data['defendants'][0]['crimes'][0]['times'] = 3
+        self.data['defendants'][0]['execution_groups'][0]['executed_penalty'] = 18
+        self.data['defendants'].append(other)
+        expected = build_judgment_analysis(self.case, [self.row])
+        actual = JudgmentAnalysis.from_dict(self.data)
+        before_expected, before_actual = expected.model_copy(deep=True), actual.model_copy(deep=True)
+        result = compare_analyses(expected, actual)
+        self.assertEqual(result['status'], 'unmatched')
+        self.assertEqual(result['reason'], 'defendants[0].probation 不合')
+        self.assertEqual(expected, before_expected)
+        self.assertEqual(actual, before_actual)
+        self.assertEqual(self.run_report()['rows'][0]['reason'], result['reason'])
+
+    def test_matching_fields_with_nonmatching_name_do_not_pass(self):
+        other = deepcopy(self.data['defendants'][0])
+        other['name'] = '李大華'
+        self.data['defendants'][0]['probation'] = 5
+        self.data['defendants'].append(other)
+        self.assertEqual(self.run_report()['rows'][0]['status'], 'unmatched')
 
     def test_conflicts_fail_defendant_with_sequence_context(self):
         for change in ({"累犯": 1}, {"個案徒刑": 10300}, {"次數": 3},
@@ -256,7 +320,7 @@ class CompareJudgmentTests(unittest.TestCase):
         other = deepcopy(self.data['defendants'][0])
         other.update(name='李大華', probation=4)
         self.data['defendants'].append(other)
-        report = self.run_report([self.row, {**self.row, '姓名': '李○○'}])
+        report = self.run_report([self.row, {**self.row, '序號': 22598268, '姓名': '李○○'}])
         self.assertEqual(report['summary'], {'equal': 1, 'unmatched': 1, 'total': 2, 'errors': 0})
         first, second = report['rows']
         self.assertEqual((first['name'], first['status']), ('陳○○', 'equal'))
@@ -269,33 +333,68 @@ class CompareJudgmentTests(unittest.TestCase):
     def test_invalid_excel_defendant_does_not_block_other_defendant(self):
         other = {**deepcopy(self.data['defendants'][0]), 'name': '李大華'}
         self.data['defendants'].append(other)
-        report = self.run_report([{**self.row, '姓名': '李○○', '次數': 0}, self.row])
+        report = self.run_report([{**self.row, '序號': 22598268, '姓名': '李○○', '次數': 0}, self.row])
         self.assertEqual([r['status'] for r in report['rows']], ['unmatched', 'equal'])
         self.assertEqual(report['summary']['errors'], 1)
         self.assertEqual(report['errors'][0]['name'], '李○○')
 
-    def test_ambiguous_or_missing_defendant_does_not_block_unique_match(self):
+    def test_multiple_or_missing_candidates_do_not_block_other_defendant(self):
         self.data['defendants'].append({**deepcopy(self.data['defendants'][0]), 'name': '李大華'})
         for ambiguous in (False, True):
             with self.subTest(ambiguous=ambiguous):
                 if ambiguous:
                     self.data['defendants'].append({**deepcopy(self.data['defendants'][0]), 'name': '陳大華'})
                 name = '陳○○' if ambiguous else '王○○'
-                report = self.run_report([{**self.row, '姓名': name}, {**self.row, '姓名': '李○○'}])
-                self.assertEqual([r['status'] for r in report['rows']], ['unmatched', 'equal'])
-                self.assertIn('被告姓名無法唯一配對', report['rows'][0]['reason'])
+                report = self.run_report([{**self.row, '姓名': name}, {**self.row, '序號': 22598268, '姓名': '李○○'}])
+                self.assertEqual([r['status'] for r in report['rows']],
+                                 ['equal' if ambiguous else 'unmatched', 'equal'])
+                if not ambiguous:
+                    self.assertIn('找不到姓名相符的被告', report['rows'][0]['reason'])
 
     def test_case_number_is_checked_before_defendant_name(self):
         expected = build_judgment_analysis(self.case, [self.row])
         actual = JudgmentAnalysis.from_dict({**self.data, 'case_number': '臺灣高等法院115年度上訴字第1號',
                                             'defendants': []})
-        self.assertEqual(compare_analyses(expected, actual)['reason'], 'case_number 不合')
+        with patch('judgment_app.analysis.compare_judgment._compare_defendant',
+                   side_effect=AssertionError('案號不同不應比對被告')):
+            result = compare_analyses(expected, actual)
+        self.assertEqual(result['reason'], 'case_number 不合')
+        self.assertEqual(len(result['defendant_results']), 1)
+        self.assertEqual(result['defendant_results'][0]['reason'], 'case_number 不合')
+
+    def test_compare_analyses_returns_all_defendants_after_missing_name(self):
+        expected = build_judgment_analysis(self.case, [
+            {**self.row, '姓名': '王○○'},
+            {**self.row, '序號': 22598268},
+            {**self.row, '序號': 22598269, '應執緩刑期間': 400},
+        ])
+        result = compare_analyses(expected, JudgmentAnalysis.from_dict(self.data))
+        self.assertEqual(result['status'], 'unmatched')
+        self.assertIn('找不到姓名相符的被告', result['reason'])
+        self.assertEqual([r['status'] for r in result['defendant_results']],
+                         ['unmatched', 'equal', 'unmatched'])
+        self.assertEqual(result['defendant_results'][2]['reason'], 'defendants[2].probation 不合')
 
     def test_each_defendant_can_match_a_different_document(self):
         other = deepcopy(self.data)
         other['defendants'][0]['name'] = '李大華'
         (self.root / '另一份.json').write_text(json.dumps(other), encoding='utf-8')
-        report = self.run_report([self.row, {**self.row, '姓名': '李○○'}])
+        compared = []
+
+        def capture(expected, actual):
+            result = compare_analyses(expected, actual)
+            compared.append((expected, actual, result))
+            return result
+
+        with patch('judgment_app.analysis.compare_judgment.compare_analyses', side_effect=capture) as compare:
+            report = self.run_report([self.row, {**self.row, '序號': 22598268, '姓名': '李○○'}])
+        self.assertEqual(compare.call_count, 2)
+        self.assertIs(compared[0][0], compared[1][0])
+        self.assertEqual(len(compared[0][0].defendants), 2)
+        for _, actual, result in compared:
+            self.assertEqual(result['status'], 'unmatched')
+            expected_statuses = ['equal', 'unmatched'] if actual.defendants[0].name == '陳小明' else ['unmatched', 'equal']
+            self.assertEqual([r['status'] for r in result['defendant_results']], expected_statuses)
         self.assertEqual(report['summary'], {'equal': 2, 'total': 2, 'errors': 0})
         for result in report['rows']:
             self.assertEqual({r['status'] for r in result['document_results']}, {'equal', 'unmatched'})
@@ -348,7 +447,7 @@ class CompareJudgmentTests(unittest.TestCase):
                 excel_row_to_law_reference({**self.row, "法條": code})
 
     def test_case_rows_span_sheets_and_files(self):
-        other = {**self.row, "姓名": "李○○"}
+        other = {**self.row, "序號": 22598268, "姓名": "李○○"}
         self.data["defendants"].append({**deepcopy(self.data["defendants"][0]), "name": "李大華", "probation": 4})
         self.source.write_text(json.dumps(self.data), encoding="utf-8")
         with pd.ExcelWriter(self.excel) as writer:
@@ -396,18 +495,25 @@ class CompareJudgmentTests(unittest.TestCase):
                 actual.defendants[0].name = "陳小明"
                 self.assertEqual(compare_analyses(expected, actual)["status"], "equal")
 
-    def test_execution_status_column_is_ignored_including_missing_and_conflicting_values(self):
-        for value in ('無罪', '免訴', '不受理', '免刑', None, '不合法內容'):
+    def test_execution_status_is_used_independently_of_crime_status(self):
+        for status in ('無罪', '免訴', '不受理', '免刑'):
+            with self.subTest(status=status):
+                self.row['應執裁判情形'] = status
+                expected = build_judgment_analysis(self.case, [self.row])
+                self.assertEqual(expected.defendants[0].crimes[0].crime_jsst, '科刑')
+                self.assertEqual(expected.defendants[0].execution_groups[0].executed_jsst, status)
+                self.assertEqual(self.run_report()['rows'][0]['status'], 'unmatched')
+        for value in (None, '不合法內容'):
             with self.subTest(value=value):
                 self.row['應執裁判情形'] = value
-                self.assertEqual(self.run_report()['rows'][0]['status'], 'equal')
+                self.assertEqual(self.run_report()['summary']['errors'], 1)
         del self.row['應執裁判情形']
-        self.assertEqual(self.run_report()['rows'][0]['status'], 'equal')
-        self.assertEqual(self.run_report([self.row, {**self.row, '應執裁判情形': '無罪'}])['rows'][0]['status'], 'equal')
+        report = self.run_report()
+        self.assertTrue(any('應執裁判情形' in e['error'] for e in report['errors']))
 
-    def test_mixed_crime_statuses_in_one_sequence_find_separate_groups(self):
+    def test_mixed_execution_statuses_in_one_sequence_find_separate_groups(self):
         rows = [{**self.row, '個案裁判情形': status, '個案序號': index,
-                 '應執裁判情形': '科刑', '個案徒刑': 0, '個案徒刑易科標準': None,
+                 '應執裁判情形': status, '個案徒刑': 0, '個案徒刑易科標準': None,
                  '法條': '000000000'}
                 for index, status in enumerate(('無罪', '免訴', '不受理', '免刑'), 1)]
         expected = build_judgment_analysis(self.case, rows)
@@ -425,9 +531,12 @@ class CompareJudgmentTests(unittest.TestCase):
     def test_multiple_excel_groups_can_reuse_one_json_group_for_every_status(self):
         for status in ('科刑', '無罪', '免訴', '不受理', '免刑'):
             with self.subTest(status=status):
-                rows = [{**self.row, '序號': number, '個案裁判情形': status}
-                        for number in (1, 2)]
-                expected = build_judgment_analysis(self.case, rows)
+                expected = build_judgment_analysis(
+                    self.case, [{**self.row, '個案裁判情形': status, '應執裁判情形': status}],
+                )
+                expected.defendants[0].execution_groups.append(
+                    expected.defendants[0].execution_groups[0].model_copy(deep=True),
+                )
                 actual = expected.model_copy(deep=True)
                 actual.defendants[0].execution_groups.pop()
                 before = actual.model_dump()
@@ -435,6 +544,42 @@ class CompareJudgmentTests(unittest.TestCase):
                 self.assertEqual(actual.model_dump(), before)
                 actual.defendants[0].execution_groups[0].executed_jsst = '無罪' if status != '無罪' else '科刑'
                 self.assertEqual(compare_analyses(expected, actual)['status'], 'unmatched')
+
+    def test_case_is_built_once_with_all_defendants_across_sheets(self):
+        self.source.write_text(json.dumps(self.data), encoding='utf-8')
+        other = {**self.row, '序號': 22598268, '姓名': '李○○'}
+        with pd.ExcelWriter(self.excel) as writer:
+            pd.DataFrame([self.row, other]).to_excel(writer, sheet_name='一', index=False)
+            pd.DataFrame([{**self.row, '法條': '0190x1B00'}]).to_excel(writer, sheet_name='二', index=False)
+        built = []
+
+        def capture(*args, **kwargs):
+            analysis = build_judgment_analysis(*args, **kwargs)
+            built.append(analysis)
+            return analysis
+
+        with patch('judgment_app.analysis.compare_judgment._build_judgment_analysis', side_effect=capture) as builder:
+            report = compare_files(self.excel, self.root)
+        self.assertEqual(builder.call_count, 1)
+        self.assertEqual(len(built[0].defendants), 2)
+        self.assertEqual(len(built[0].defendants[0].crimes[0].laws), 2)
+        self.assertEqual(len(report['rows'][0]['excel_rows']), 2)
+
+    def test_comparison_and_building_do_not_serialize_models_or_json(self):
+        actual = JudgmentAnalysis.from_dict(self.data)
+        with patch('judgment_app.analysis.analysis_models.AnalysisModel.model_dump',
+                   side_effect=AssertionError('比較不應序列化模型')), patch(
+            'judgment_app.analysis.compare_judgment.json.dumps',
+            side_effect=AssertionError('比較不應序列化 JSON'),
+        ):
+            expected = build_judgment_analysis(self.case, [self.row, self.row])
+            self.assertEqual(compare_analyses(expected, actual)['status'], 'equal')
+            actual.defendants[0].crimes[0].laws[0] = actual.defendants[0].crimes[0].laws[0].model_copy(
+                update={'article': 340},
+            )
+            result = compare_analyses(expected, actual)
+            self.assertEqual(result['status'], 'unmatched')
+            self.assertIn('laws[].article', result['reason'])
 
     def test_invalid_case_json_and_missing_headers(self):
         report = self.run_report([self.row, {**self.row, "裁判年度": "無效"}])
