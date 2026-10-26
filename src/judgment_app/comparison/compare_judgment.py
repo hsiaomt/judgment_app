@@ -7,10 +7,10 @@ import re
 
 import pandas as pd
 
-from judgment_app.analysis.analysis_models import (
+from judgment_app.analysis.models import (
     AnalysisModel, CrimeAnalysis, DefendantAnalysis, ExecutionGroup, JudgmentAnalysis, LawReference,
 )
-from judgment_app.comparison.comparison_models import ComparisonReport
+from judgment_app.comparison.models import ComparisonReport
 from judgment_app.comparison.compare_common import (
     IDENTITY_COLUMNS, _is_blank, excel_bool, excel_integer, excel_optional_text, _non_negative_integer,
     find_excel_files, read_excel_header, iter_excel_rows,

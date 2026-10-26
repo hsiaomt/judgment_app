@@ -10,8 +10,8 @@ import pandas as pd
 from openpyxl import Workbook, load_workbook
 from pydantic import ValidationError
 
-from judgment_app.analysis.analysis_models import JudgmentAnalysis
-from judgment_app.comparison.comparison_models import ComparisonReport
+from judgment_app.analysis.models import JudgmentAnalysis
+from judgment_app.comparison.models import ComparisonReport
 from judgment_app.case_number import CaseNumber
 from judgment_app.paths import resolve_output_path
 

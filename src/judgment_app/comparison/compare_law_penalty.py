@@ -7,8 +7,8 @@ from pathlib import Path
 import pandas as pd
 from pydantic import ValidationError
 
-from judgment_app.comparison.comparison_models import ComparisonReport, ComparisonResult
-from judgment_app.analysis.analysis_models import CrimeAnalysis, JudgmentAnalysis, LawReference
+from judgment_app.comparison.models import ComparisonReport, ComparisonResult
+from judgment_app.analysis.models import CrimeAnalysis, JudgmentAnalysis, LawReference
 from judgment_app.comparison.compare_common import (
     IDENTITY_COLUMNS, excel_bool, excel_integer, excel_optional_text, _non_negative_integer,
     find_excel_files, read_excel_header, iter_excel_rows,

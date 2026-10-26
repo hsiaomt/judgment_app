@@ -27,7 +27,7 @@ Python 3.12 + uv 專案。
   https://app.notion.com/p/405f9722246d8094aca7cba861d765ce
 
 - 資料模型的實際欄位、型別與驗證器，以目前工作目錄中的
-  src/judgment_app/analysis/analysis_models.py 為準。
+  src/judgment_app/analysis/models.py 為準。
 
 - Notion 的模型內容是同步副本，使用前應確認來源 commit。
   如果 Notion 與程式碼不一致，明確指出差異；

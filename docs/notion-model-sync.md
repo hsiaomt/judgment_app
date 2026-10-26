@@ -1,6 +1,6 @@
 # 資料模型自動同步到 Notion
 
-來源：`main` 的 `src/judgment_app/analysis/analysis_models.py`。
+來源：`main` 的 `src/judgment_app/analysis/models.py`。
 目的地：https://app.notion.com/p/405f9722246d80328fc4c98a3ab570d1
 
 只同步模型檔全文、由 AST 取得的欄位及型別、commit 與內容 SHA256。

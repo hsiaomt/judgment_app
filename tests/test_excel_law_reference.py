@@ -1,6 +1,6 @@
 import unittest
 
-from judgment_app.analysis.analysis_models import LawReference
+from judgment_app.analysis.models import LawReference
 from judgment_app.comparison.compare_law_penalty import excel_row_to_law_reference
 
 

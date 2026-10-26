@@ -11,8 +11,8 @@ import re
 
 import requests
 
-from judgment_app.analysis import analysis_models
-from judgment_app.analysis.analysis_models import JudgmentAnalysis
+from judgment_app.analysis import models
+from judgment_app.analysis.models import JudgmentAnalysis
 from judgment_app.case_number import CaseNumber
 from judgment_app.paths import load_settings, resolve_output_path
 
@@ -153,7 +153,7 @@ def analyze_judgment(
     schema = _schema(JudgmentAnalysis)
     load_settings()
     api_key, selected_model = _provider_settings(provider, model)
-    prompt = analysis_models.build_prompt(has_target_case=bool(target_case_number))
+    prompt = models.build_prompt(has_target_case=bool(target_case_number))
     input_data = {"jid": expected_jid, "judgment": text}
     if target_case_number:
         input_data["target_case_number"] = target_case_number

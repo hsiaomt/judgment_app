@@ -12,7 +12,7 @@ import time
 import requests
 
 ROOT = Path(__file__).resolve().parents[1]
-MODEL = Path("src/judgment_app/analysis/analysis_models.py")
+MODEL = Path("src/judgment_app/analysis/models.py")
 START = "## MODEL_SYNC_START"
 END = "## MODEL_SYNC_END"
 API = "https://api.notion.com/v1"
@@ -49,7 +49,7 @@ def build_content(source, commit):
     digest = hashlib.sha256(source.encode()).hexdigest()
     url = f"https://github.com/hsiaomt/judgment_app/blob/{commit}/{MODEL.as_posix()}"
     lines = [START, "", "此區由 GitHub Actions 維護；人工業務規則請寫在區域外。",
-             f"來源：[analysis_models.py]({url})", f"Commit: `{commit}`",
+             f"來源：[models.py]({url})", f"Commit: `{commit}`",
              f"Source SHA256: `{digest}`", "", "### 欄位與型別"]
     for node in tree.body:
         if isinstance(node, ast.ClassDef):

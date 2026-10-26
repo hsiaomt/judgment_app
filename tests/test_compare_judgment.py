@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pandas as pd
 from openpyxl import load_workbook
 
-from judgment_app.analysis.analysis_models import JudgmentAnalysis
+from judgment_app.analysis.models import JudgmentAnalysis
 from judgment_app.comparison.compare_judgment import (
     build_judgment_analysis, compare_analyses, compare_files,
     excel_row_to_law_reference,
@@ -615,7 +615,7 @@ class CompareJudgmentTests(unittest.TestCase):
 
     def test_comparison_and_building_do_not_serialize_models_or_json(self):
         actual = JudgmentAnalysis.from_dict(self.data)
-        with patch('judgment_app.analysis.analysis_models.AnalysisModel.model_dump',
+        with patch('judgment_app.analysis.models.AnalysisModel.model_dump',
                    side_effect=AssertionError('比較不應序列化模型')), patch(
             'judgment_app.comparison.compare_judgment.json.dumps',
             side_effect=AssertionError('比較不應序列化 JSON'),

@@ -7,7 +7,7 @@ import unittest
 from pydantic import ValidationError
 
 from judgment_app.comparison.compare_common import load_comparison_report
-from judgment_app.comparison.comparison_models import ComparisonReport, ComparisonResult
+from judgment_app.comparison.models import ComparisonReport, ComparisonResult
 
 
 class ComparisonReportTests(unittest.TestCase):

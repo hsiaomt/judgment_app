@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 import requests
 
 from judgment_app.analysis.analyzer import analyze_judgment, read_judgment
-from judgment_app.analysis.analysis_models import (
+from judgment_app.analysis.models import (
     CrimeAnalysis, DefendantAnalysis, ExecutionGroup, JudgmentAnalysis, LawReference,
 )
 
