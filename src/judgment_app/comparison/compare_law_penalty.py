@@ -7,9 +7,9 @@ from pathlib import Path
 import pandas as pd
 from pydantic import ValidationError
 
-from judgment_app.analysis.comparison_models import ComparisonReport, ComparisonResult
+from judgment_app.comparison.comparison_models import ComparisonReport, ComparisonResult
 from judgment_app.analysis.analysis_models import CrimeAnalysis, JudgmentAnalysis, LawReference
-from judgment_app.analysis.compare_common import (
+from judgment_app.comparison.compare_common import (
     IDENTITY_COLUMNS, excel_bool, excel_integer, excel_optional_text, _non_negative_integer,
     find_excel_files, read_excel_header, iter_excel_rows,
     compare_to_report, load_analyses, matches_defendant_name, _text, write_excel_statuses,
@@ -46,13 +46,13 @@ def main() -> None:
         print(f"Excel 比對結果：{output['output']}")
 
 
-def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
+def compare_files(excel_path: Path, json_path: Path, *, progress=None, excel_files: list[Path] | None = None) -> dict:
     """回傳每列差異、未配對原因及未比較欄位，並將 status、reason 寫入 Excel。"""
     report = {"rows": [], "errors": [], "sheets": [], "excel_outputs": []}
     if progress:
         progress("正在讀取分析 JSON…")
     index = load_analyses(Path(json_path), report["errors"])
-    files = find_excel_files(Path(excel_path))
+    files = find_excel_files(Path(excel_path)) if excel_files is None else excel_files
     for file_index, path in enumerate(files, 1):
         if progress:
             progress(f"正在比對 Excel {file_index} / {len(files)}：{path.name}")

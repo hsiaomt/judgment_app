@@ -10,8 +10,8 @@ import pandas as pd
 from judgment_app.analysis.analysis_models import (
     AnalysisModel, CrimeAnalysis, DefendantAnalysis, ExecutionGroup, JudgmentAnalysis, LawReference,
 )
-from judgment_app.analysis.comparison_models import ComparisonReport
-from judgment_app.analysis.compare_common import (
+from judgment_app.comparison.comparison_models import ComparisonReport
+from judgment_app.comparison.compare_common import (
     IDENTITY_COLUMNS, _is_blank, excel_bool, excel_integer, excel_optional_text, _non_negative_integer,
     find_excel_files, read_excel_header, iter_excel_rows,
     compare_to_report, load_analyses, matches_defendant_name, _text, write_excel_statuses,
@@ -73,13 +73,13 @@ def main() -> None:
         print(f"Excel 比對結果：{output['output']}")
 
 
-def compare_files(excel_path: Path, json_path: Path, *, progress=None) -> dict:
+def compare_files(excel_path: Path, json_path: Path, *, progress=None, excel_files: list[Path] | None = None) -> dict:
     """依案號建立完整物件，再依 Excel 序號分別比對被告；各被告獨立產生結果並回寫來源列。"""
     report = {"rows": [], "errors": [], "sheets": [], "excel_outputs": [],
               "ignored_fields": sorted(IGNORED_FIELDS)}
     index = load_analyses(Path(json_path), report["errors"])
     workbooks = {}
-    cases = _read_excel_cases(Path(excel_path), report, progress, workbooks=workbooks)
+    cases = _read_excel_cases(Path(excel_path), report, progress, workbooks=workbooks, excel_files=excel_files)
     for case, records in cases.items():
         defendants = {}
         for row, location in records:
@@ -198,8 +198,9 @@ def _write_comparison_results(report: dict, workbooks: dict, progress) -> None:
                                      "error": f"{type(exc).__name__}: {exc}"})
 
 
-def _read_excel_cases(path: Path, report: dict, progress, *, workbooks: dict | None = None) -> dict:
-    files = find_excel_files(path)
+def _read_excel_cases(path: Path, report: dict, progress, *, workbooks: dict | None = None,
+                      excel_files: list[Path] | None = None) -> dict:
+    files = find_excel_files(path) if excel_files is None else excel_files
     cases = {}
     for source in files:
         state = {"statuses": {}, "legacy_tables": {} if source.suffix.lower() == ".xls" else None,

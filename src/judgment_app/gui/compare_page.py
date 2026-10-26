@@ -3,8 +3,8 @@ import json
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from judgment_app.analysis.compare_law_penalty import compare_files
-from judgment_app.analysis.compare_common import compare_to_report, load_comparison_report
+from judgment_app.comparison.compare_common import compare_files_auto as compare_files
+from judgment_app.comparison.compare_common import compare_to_report, load_comparison_report
 from judgment_app.paths import default_output_dir, resolve_output_path
 from .common import TaskPage
 
@@ -15,7 +15,7 @@ class ComparePage(TaskPage):
         self.comparison_file = tk.StringVar(master=self)
         self.json_source = tk.StringVar(master=self, value=str(default_output_dir().parent / "analyses"))
         self.output = tk.StringVar(master=self, value=str(default_output_dir().parent / "comparison_report.json"))
-        settings = ttk.LabelFrame(self, text="比對來源與報告", padding=12)
+        settings = ttk.LabelFrame(self, text="比對來源與報告（依 Excel 欄位自動選擇比對方式）", padding=12)
         settings.grid(row=0, column=0, sticky="ew", padx=12, pady=12)
         settings.columnconfigure(1, weight=1)
         self.path_field(settings, 0, "Excel 檔案／資料夾", self.comparison_file, filetypes=[("Excel", "*.xls *.xlsx")], button_width=8)

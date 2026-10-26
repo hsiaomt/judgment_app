@@ -11,7 +11,7 @@ from openpyxl import Workbook, load_workbook
 from pydantic import ValidationError
 
 from judgment_app.analysis.analysis_models import JudgmentAnalysis
-from judgment_app.analysis.comparison_models import ComparisonReport
+from judgment_app.comparison.comparison_models import ComparisonReport
 from judgment_app.case_number import CaseNumber
 from judgment_app.paths import resolve_output_path
 
@@ -26,6 +26,58 @@ def load_comparison_report(path: str | Path) -> dict:
         return ComparisonReport.model_validate(report).to_dict()
     except ValidationError as exc:
         raise ValueError(f"不是有效的比對報告：{source}：{exc}") from exc
+
+
+def compare_files_auto(excel_path: Path, json_path: Path, *, progress=None) -> dict:
+    """依工作簿標題選擇比對方式；不同格式的檔案分組處理，保留跨檔彙整。"""
+    from judgment_app.comparison import compare_judgment, compare_law_penalty
+
+    groups = {"judgment": [], "law_penalty": []}
+    report = {"rows": [], "errors": [], "sheets": [], "excel_outputs": []}
+    for path in find_excel_files(Path(excel_path)):
+        try:
+            modes = set()
+            with pd.ExcelFile(path) as book:
+                for sheet in book.sheet_names:
+                    if progress:
+                        progress(f"正在辨識 Excel 格式：{path.name}／{sheet}")
+                    table = book.parse(sheet, header=None, dtype=object)
+                    try:
+                        _, columns = read_excel_header(table)
+                    except ValueError:
+                        # 說明頁等沒有案號標題的工作表交由既有比對器回報。
+                        continue
+                    if compare_judgment.REQUIRED_COLUMNS <= columns.keys():
+                        modes.add("judgment")
+                    elif {"個案序號", "個案裁判情形", "應執裁判情形"} & columns.keys():
+                        missing = compare_judgment.REQUIRED_COLUMNS - columns.keys()
+                        raise ValueError(f"{sheet} 缺少執行明細欄位：{'、'.join(sorted(missing))}")
+                    elif {"案由", "條", "裁判情形"} <= columns.keys():
+                        modes.add("law_penalty")
+                    else:
+                        raise ValueError(f"{sheet} 無法辨識比對格式：需要執行明細或法條／刑度檢核表欄位")
+            if len(modes) != 1:
+                raise ValueError("同一 Excel 混用兩種比對格式，請拆成不同檔案" if modes
+                                 else "找不到可辨識的比對標題列")
+            mode = modes.pop()
+            groups[mode].append(path)
+            if progress:
+                label = "完整判決比對（compare_judgment）" if mode == "judgment" else "法條／刑度比對（compare_law_penalty）"
+                progress(f"自動判斷 {path.name}：{label}")
+        except Exception as exc:
+            report["errors"].append({"file": str(path), "stage": "detect_comparison",
+                                     "error": f"{type(exc).__name__}: {exc}"})
+    for mode, module in (("judgment", compare_judgment), ("law_penalty", compare_law_penalty)):
+        if not groups[mode]:
+            continue
+        result = module.compare_files(excel_path, json_path, progress=progress, excel_files=groups[mode])
+        for key in ("rows", "errors", "sheets", "excel_outputs"):
+            report[key].extend(result[key])
+        if "ignored_fields" in result:
+            report["ignored_fields"] = result["ignored_fields"]
+    # 兩種比對共用 JSON 來源，讀取錯誤只保留一次。
+    report["errors"] = list({json.dumps(error, sort_keys=True): error for error in report["errors"]}.values())
+    return ComparisonReport.model_validate(report).to_dict()
 
 
 def compare_to_report(excel_path: Path, json_path: Path, destination: Path, *, compare, progress=None) -> dict:
