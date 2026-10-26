@@ -1,0 +1,38 @@
+name: Sync analysis model to Notion
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/judgment_app/analysis/analysis_models.py
+      - scripts/sync_notion_model.py
+      - .github/workflows/sync-notion-model.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notion-analysis-model
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'requests>=2.32,<3'
+      - run: python -m unittest discover -s tests -p test_sync_notion_model.py
+      - name: Sync and verify Notion page
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PAGE_ID: '405f9722246d80328fc4c98a3ab570d1'
+        run: python scripts/sync_notion_model.py
