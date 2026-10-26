@@ -11,7 +11,7 @@ from judgment_app.analysis.models import (
     AnalysisModel, CrimeAnalysis, DefendantAnalysis, ExecutionGroup, JudgmentAnalysis, LawReference,
 )
 from judgment_app.comparison.models import ComparisonReport
-from judgment_app.comparison.compare_common import (
+from judgment_app.comparison.common import (
     IDENTITY_COLUMNS, _is_blank, excel_bool, excel_integer, excel_optional_text, _non_negative_integer,
     find_excel_files, read_excel_header, iter_excel_rows,
     compare_to_report, load_analyses, matches_defendant_name, _text, write_excel_statuses,

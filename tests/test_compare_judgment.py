@@ -9,11 +9,11 @@ import pandas as pd
 from openpyxl import load_workbook
 
 from judgment_app.analysis.models import JudgmentAnalysis
-from judgment_app.comparison.compare_judgment import (
+from judgment_app.comparison.judgment import (
     build_judgment_analysis, compare_analyses, compare_files,
     excel_row_to_law_reference,
 )
-from judgment_app.comparison.compare_common import compare_to_report, load_comparison_report
+from judgment_app.comparison.common import compare_to_report, load_comparison_report
 
 
 class CompareJudgmentTests(unittest.TestCase):
@@ -51,7 +51,7 @@ class CompareJudgmentTests(unittest.TestCase):
         }
 
     def test_auto_comparison_selects_formats_and_writes_results(self):
-        from judgment_app.comparison.compare_common import compare_files_auto
+        from judgment_app.comparison.common import compare_files_auto
 
         pd.DataFrame([self.row]).to_excel(self.excel, index=False, startrow=2)
         self.source.write_text(json.dumps(self.data), encoding="utf-8")
@@ -65,8 +65,8 @@ class CompareJudgmentTests(unittest.TestCase):
         report = compare_files_auto(self.root, self.source, progress=messages.append)
         self.assertEqual(report["summary"], {"equal": 2, "total": 2, "errors": 0})
         self.assertEqual(len(report["excel_outputs"]), 2)
-        self.assertTrue(any("compare_judgment" in message for message in messages))
-        self.assertTrue(any("compare_law_penalty" in message for message in messages))
+        self.assertTrue(any("judgment" in message for message in messages))
+        self.assertTrue(any("law_penalty" in message for message in messages))
         for path, header in ((self.excel, 3), (law_path, 1)):
             book = load_workbook(path)
             try:
@@ -76,7 +76,7 @@ class CompareJudgmentTests(unittest.TestCase):
                 book.close()
 
     def test_auto_comparison_rejects_incomplete_unknown_and_mixed_formats(self):
-        from judgment_app.comparison.compare_common import compare_files_auto
+        from judgment_app.comparison.common import compare_files_auto
 
         identity = {key: self.row[key] for key in
                     ("裁判機關", "裁判年度", "裁判冠字", "裁判號數", "姓名")}
@@ -403,7 +403,7 @@ class CompareJudgmentTests(unittest.TestCase):
         expected = build_judgment_analysis(self.case, [self.row])
         actual = JudgmentAnalysis.from_dict({**self.data, 'case_number': '臺灣高等法院115年度上訴字第1號',
                                             'defendants': []})
-        with patch('judgment_app.comparison.compare_judgment._compare_defendant',
+        with patch('judgment_app.comparison.judgment._compare_defendant',
                    side_effect=AssertionError('案號不同不應比對被告')):
             result = compare_analyses(expected, actual)
         self.assertEqual(result['reason'], 'case_number 不合')
@@ -434,7 +434,7 @@ class CompareJudgmentTests(unittest.TestCase):
             compared.append((expected, actual, result))
             return result
 
-        with patch('judgment_app.comparison.compare_judgment.compare_analyses', side_effect=capture) as compare:
+        with patch('judgment_app.comparison.judgment.compare_analyses', side_effect=capture) as compare:
             report = self.run_report([self.row, {**self.row, '序號': 22598268, '姓名': '李○○'}])
         self.assertEqual(compare.call_count, 2)
         self.assertIs(compared[0][0], compared[1][0])
@@ -606,7 +606,7 @@ class CompareJudgmentTests(unittest.TestCase):
             built.append(analysis)
             return analysis
 
-        with patch('judgment_app.comparison.compare_judgment.build_judgment_analysis', side_effect=capture) as builder:
+        with patch('judgment_app.comparison.judgment.build_judgment_analysis', side_effect=capture) as builder:
             report = compare_files(self.excel, self.root)
         self.assertEqual(builder.call_count, 1)
         self.assertEqual(len(built[0].defendants), 2)
@@ -617,7 +617,7 @@ class CompareJudgmentTests(unittest.TestCase):
         actual = JudgmentAnalysis.from_dict(self.data)
         with patch('judgment_app.analysis.models.AnalysisModel.model_dump',
                    side_effect=AssertionError('比較不應序列化模型')), patch(
-            'judgment_app.comparison.compare_judgment.json.dumps',
+            'judgment_app.comparison.judgment.json.dumps',
             side_effect=AssertionError('比較不應序列化 JSON'),
         ):
             expected = build_judgment_analysis(self.case, [self.row, self.row])
@@ -727,7 +727,7 @@ class CompareJudgmentTests(unittest.TestCase):
         source = self.root / 'legacy.xls'
         source.write_bytes(b'legacy')
         excel_file = pd.ExcelFile
-        with patch('judgment_app.comparison.compare_judgment.pd.ExcelFile',
+        with patch('judgment_app.comparison.judgment.pd.ExcelFile',
                    side_effect=lambda path: excel_file(self.excel if Path(path) == source else path)):
             report = compare_files(source, self.root)
             output = Path(report['excel_outputs'][0]['output'])
@@ -762,7 +762,7 @@ class CompareJudgmentTests(unittest.TestCase):
             return parse(book, sheet, **kwargs)
 
         with patch.object(excel_file, 'parse', read_sheet), patch(
-            'judgment_app.comparison.compare_judgment.pd.ExcelFile', side_effect=lambda path: excel_file(self.excel),
+            'judgment_app.comparison.judgment.pd.ExcelFile', side_effect=lambda path: excel_file(self.excel),
         ):
             report = compare_files(source, self.root)
         self.assertEqual(report['rows'][0]['status'], 'equal')

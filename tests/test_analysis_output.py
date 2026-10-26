@@ -5,8 +5,8 @@ import unittest
 from unittest.mock import Mock, patch
 
 from judgment_app.analysis.analyzer import analyze_source, analyze_folder
-from judgment_app.comparison.compare_law_penalty import compare_files
-from judgment_app.comparison.compare_common import compare_to_report
+from judgment_app.comparison.law_penalty import compare_files
+from judgment_app.comparison.common import compare_to_report
 
 
 class AnalysisOutputTests(unittest.TestCase):

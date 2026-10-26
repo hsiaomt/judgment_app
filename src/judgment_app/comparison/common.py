@@ -30,7 +30,7 @@ def load_comparison_report(path: str | Path) -> dict:
 
 def compare_files_auto(excel_path: Path, json_path: Path, *, progress=None) -> dict:
     """依工作簿標題選擇比對方式；不同格式的檔案分組處理，保留跨檔彙整。"""
-    from judgment_app.comparison import compare_judgment, compare_law_penalty
+    from judgment_app.comparison import judgment, law_penalty
 
     groups = {"judgment": [], "law_penalty": []}
     report = {"rows": [], "errors": [], "sheets": [], "excel_outputs": []}
@@ -47,10 +47,10 @@ def compare_files_auto(excel_path: Path, json_path: Path, *, progress=None) -> d
                     except ValueError:
                         # 說明頁等沒有案號標題的工作表交由既有比對器回報。
                         continue
-                    if compare_judgment.REQUIRED_COLUMNS <= columns.keys():
+                    if judgment.REQUIRED_COLUMNS <= columns.keys():
                         modes.add("judgment")
                     elif {"個案序號", "個案裁判情形", "應執裁判情形"} & columns.keys():
-                        missing = compare_judgment.REQUIRED_COLUMNS - columns.keys()
+                        missing = judgment.REQUIRED_COLUMNS - columns.keys()
                         raise ValueError(f"{sheet} 缺少執行明細欄位：{'、'.join(sorted(missing))}")
                     elif {"案由", "條", "裁判情形"} <= columns.keys():
                         modes.add("law_penalty")
@@ -62,12 +62,12 @@ def compare_files_auto(excel_path: Path, json_path: Path, *, progress=None) -> d
             mode = modes.pop()
             groups[mode].append(path)
             if progress:
-                label = "完整判決比對（compare_judgment）" if mode == "judgment" else "法條／刑度比對（compare_law_penalty）"
+                label = "完整判決比對（judgment）" if mode == "judgment" else "法條／刑度比對（law_penalty）"
                 progress(f"自動判斷 {path.name}：{label}")
         except Exception as exc:
             report["errors"].append({"file": str(path), "stage": "detect_comparison",
                                      "error": f"{type(exc).__name__}: {exc}"})
-    for mode, module in (("judgment", compare_judgment), ("law_penalty", compare_law_penalty)):
+    for mode, module in (("judgment", judgment), ("law_penalty", law_penalty)):
         if not groups[mode]:
             continue
         result = module.compare_files(excel_path, json_path, progress=progress, excel_files=groups[mode])

@@ -3,8 +3,8 @@ import json
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from judgment_app.comparison.compare_common import compare_files_auto as compare_files
-from judgment_app.comparison.compare_common import compare_to_report, load_comparison_report
+from judgment_app.comparison.common import compare_files_auto as compare_files
+from judgment_app.comparison.common import compare_to_report, load_comparison_report
 from judgment_app.paths import default_output_dir, resolve_output_path
 from .common import TaskPage
 

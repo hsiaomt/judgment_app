@@ -118,7 +118,7 @@ uv run python -m unittest discover -s tests -v
 ### 比對 Excel 與分析 JSON
 
 ```bash
-uv run python -m judgment_app.comparison.compare_law_penalty --excel data --json-dir data/judgments --output data/comparison_report.json
+uv run python -m judgment_app.comparison.law_penalty --excel data --json-dir data/judgments --output data/comparison_report.json
 ```
 
 `--excel` 可指定單一 `.xls`／`.xlsx` 或資料夾，`--json-dir` 可指定單一分析 JSON 或資料夾；資料夾會遞迴搜尋。支援目前檢核表的標題列自動辨識與多工作表。
@@ -132,14 +132,14 @@ uv run python -m judgment_app.comparison.compare_law_penalty --excel data --json
 ### 比對完整 JudgmentAnalysis（執行明細）
 
 ```bash
-uv run python -m judgment_app.comparison.compare_judgment --excel data/執行明細.xlsx --json-dir data/judgments --output data/judgment_comparison_report.json
+uv run python -m judgment_app.comparison.judgment --excel data/執行明細.xlsx --json-dir data/judgments --output data/judgment_comparison_report.json
 ```
 
-新模組依 `data/執行明細.xlsx` 的標題與格式讀取，也接受 `.xls`／`.xlsx` 資料夾並遞迴搜尋。Excel 同案號、同姓名的各工作表與各檔案資料會一起彙整，建立 `JudgmentAnalysis` 後，以 Excel 被告為範圍逐人比對。原本的定位比對仍使用 `judgment_app.comparison.compare_law_penalty`。
+新模組依 `data/執行明細.xlsx` 的標題與格式讀取，也接受 `.xls`／`.xlsx` 資料夾並遞迴搜尋。Excel 同案號、同姓名的各工作表與各檔案資料會一起彙整，建立 `JudgmentAnalysis` 後，以 Excel 被告為範圍逐人比對。原本的定位比對仍使用 `judgment_app.comparison.law_penalty`。
 
 - 同一判決、同一被告內，「序號＋個案序號」相同代表同一 `CrimeAnalysis`，合併並去重法條；`times` 取「次數」，不按法條列數累加。
 - 同一被告內依「序號＋個案裁判情形」整理 group 配對條件；Excel 的「應執裁判情形」完全不使用，也不是必填標題。JSON group 以個案裁判情形配對，不比較雙方 `execution_groups` 長度，可共用同一 group，JSON 額外 group 不影響結果。無罪、免訴、不受理、免刑只需存在同裁判情形的 group；科刑仍比較應執行刑度與折算標準。
-- 先核對案號，再沿用 `compare_law_penalty.py` 的遮蔽姓名規則；每名 Excel 被告須在該份 JSON 中有唯一配對。JSON 額外被告及雙方被告總人數不影響結果。該被告的 `crimes` 不比較清單長度：每個 Excel 罪須有一個完整相符的 JSON 罪，可重用候選，JSON 額外罪不影響結果。單罪的 `times`、裁判情形、刑度、法條仍比較，不能從不同候選各取相符欄位；法條清單仍不計順序但保留數量。執行刑 group 採上述存在配對規則；無罪、免訴、不受理與免刑也比較。
+- 先核對案號，再沿用 `law_penalty.py` 的遮蔽姓名規則；每名 Excel 被告須在該份 JSON 中有唯一配對。JSON 額外被告及雙方被告總人數不影響結果。該被告的 `crimes` 不比較清單長度：每個 Excel 罪須有一個完整相符的 JSON 罪，可重用候選，JSON 額外罪不影響結果。單罪的 `times`、裁判情形、刑度、法條仍比較，不能從不同候選各取相符欄位；法條清單仍不計順序但保留數量。執行刑 group 採上述存在配對規則；無罪、免訴、不受理與免刑也比較。
 - 「上訴類別」任何非空值都代表 `is_pros_appeal=True`。空白時，地方法院且案號冠字無「上」視為一審並填 `None`，其餘填 `False`。
 
 忽略欄位：`lower_court_case_number`（需求中的 `lower_case_number`）、`confiscation`、`crime_ids`、`crime_id`、`crime_name`、`pros_appearing`、`appeal_result`、`addition_fine`、`addition_fine_to_detention`、`executed_addition_fine`、`executed_addition_fine_to_detention`。讀取 JSON 時先移除忽略的選填欄位，因此也能讀取仍含舊併科罰金欄位的資料；必要的 ID 與罪名仍接受模型驗證，只是不參與內容比較。

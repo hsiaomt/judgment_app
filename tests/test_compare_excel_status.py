@@ -8,7 +8,7 @@ import pandas as pd
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
-from judgment_app.comparison.compare_law_penalty import compare_files, _compare_row, write_excel_statuses
+from judgment_app.comparison.law_penalty import compare_files, _compare_row, write_excel_statuses
 
 
 class ExcelStatusTests(unittest.TestCase):
@@ -114,7 +114,7 @@ class ExcelStatusTests(unittest.TestCase):
         book['比對']['J2'] = 'status'
         book.save(self.excel)
         book.close()
-        with patch('judgment_app.comparison.compare_law_penalty._compare_row',
+        with patch('judgment_app.comparison.law_penalty._compare_row',
                    return_value={'status': 'unmatched', 'reason': '=1+1'}):
             compare_files(self.excel, self.json_path)
         book = load_workbook(self.excel)
@@ -126,7 +126,7 @@ class ExcelStatusTests(unittest.TestCase):
 
     def test_invalid_generated_result_is_rejected_before_excel_write(self):
         original = self.excel.read_bytes()
-        with patch('judgment_app.comparison.compare_law_penalty._compare_row', return_value={'status': 'unmatched'}):
+        with patch('judgment_app.comparison.law_penalty._compare_row', return_value={'status': 'unmatched'}):
             report = compare_files(self.excel, self.json_path)
         self.assertEqual(report['rows'], [])
         self.assertIn('reason', report['errors'][0]['error'])
@@ -162,7 +162,7 @@ class ExcelStatusTests(unittest.TestCase):
                 raise RuntimeError('單列處理失敗')
             return _compare_row(row, index)
 
-        with patch('judgment_app.comparison.compare_law_penalty._compare_row', side_effect=compare):
+        with patch('judgment_app.comparison.law_penalty._compare_row', side_effect=compare):
             report = compare_files(self.excel, self.json_path)
         self.assertEqual(len(report['rows']), 8)
         error = next(e for e in report['errors'] if e['stage'] == 'compare_row')
@@ -186,7 +186,7 @@ class ExcelStatusTests(unittest.TestCase):
                 raise PermissionError('無法寫入')
             return write_excel_statuses(path, *args, **kwargs)
 
-        with patch('judgment_app.comparison.compare_law_penalty.write_excel_statuses', side_effect=write):
+        with patch('judgment_app.comparison.law_penalty.write_excel_statuses', side_effect=write):
             report = compare_files(self.root, self.json_path)
         self.assertEqual(len(report['rows']), 16)
         self.assertTrue(any(e['file'] == str(broken) and e['stage'] == 'read_workbook' for e in report['errors']))
@@ -203,7 +203,7 @@ class ExcelStatusTests(unittest.TestCase):
             # 用既有表格模擬 xlrd 讀取結果，驗證轉存與目錄掃描流程。
             return original_excel_file(self.excel if Path(path) == source else path)
 
-        with patch('judgment_app.comparison.compare_law_penalty.pd.ExcelFile', side_effect=read_book):
+        with patch('judgment_app.comparison.law_penalty.pd.ExcelFile', side_effect=read_book):
             report = compare_files(source, self.json_path)
             output = Path(report['excel_outputs'][0]['output'])
             self.assertEqual(output.name, 'legacy.status.xlsx')
@@ -234,7 +234,7 @@ class ExcelStatusTests(unittest.TestCase):
             return original_parse(book, sheet, **kwargs)
 
         with patch.object(original_excel_file, 'parse', parse), patch(
-            'judgment_app.comparison.compare_law_penalty.pd.ExcelFile',
+            'judgment_app.comparison.law_penalty.pd.ExcelFile',
             side_effect=lambda path: original_excel_file(self.excel),
         ):
             report = compare_files(source, self.json_path)

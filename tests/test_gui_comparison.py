@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from judgment_app.gui.compare_page import ComparePage
-from judgment_app.comparison.compare_common import load_comparison_report
+from judgment_app.comparison.common import load_comparison_report
 
 
 class GuiComparisonTests(unittest.TestCase):

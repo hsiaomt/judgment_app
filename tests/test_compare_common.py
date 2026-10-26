@@ -4,12 +4,12 @@ import unittest
 
 import pandas as pd
 
-from judgment_app.comparison.compare_common import (
+from judgment_app.comparison.common import (
     excel_bool, excel_integer, excel_optional_text, find_excel_files,
     iter_excel_rows, read_excel_header,
 )
-from judgment_app.comparison.compare_law_penalty import _excel_col_to_val
-from judgment_app.comparison.compare_judgment import _row_values
+from judgment_app.comparison.law_penalty import _excel_col_to_val
+from judgment_app.comparison.judgment import _row_values
 from judgment_app.case_number import CaseNumber
 
 
