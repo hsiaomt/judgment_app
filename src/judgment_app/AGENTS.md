@@ -6,8 +6,7 @@ Python 3.12 + uv 專案。
 ## Structure
 
 - src/: Python source
-- data/raw/: 原始裁判書
-- data/split_finish/: 處理完成資料
+- data/: 資料位置
 - tests/: tests
 
 ## Rules
@@ -21,6 +20,21 @@ Python 3.12 + uv 專案。
 - 保持既有 function naming/style。
 - 遇到錯誤要保留足夠 exception context。
 - 有必要就一併修改測試檔。
+
+## 裁判書專案知識來源
+
+- 處理裁判書專案時，先讀取 Notion 專案總覽及與任務相關的業務規則：
+  https://app.notion.com/p/405f9722246d8094aca7cba861d765ce
+
+- 資料模型的實際欄位、型別與驗證器，以目前工作目錄中的
+  src/judgment_app/analysis/analysis_models.py 為準。
+
+- Notion 的模型內容是同步副本，使用前應確認來源 commit。
+  如果 Notion 與程式碼不一致，明確指出差異；
+  業務規則有衝突時，不得自行猜測。
+
+- Notion 無法存取時，明確說明，不能聲稱已讀取。
+  除非使用者要求，不修改 Notion。
 
 ## Style
 
