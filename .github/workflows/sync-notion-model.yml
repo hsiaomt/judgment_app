@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - src/judgment_app/analysis/analysis_models.py
+      - src/judgment_app/analysis/models.py
       - scripts/sync_notion_model.py
       - .github/workflows/sync-notion-model.yml
   workflow_dispatch:
