@@ -31,7 +31,7 @@ class ComparisonDifference(BaseModel):
 
 
 class ComparisonResult(BaseModel):
-    """單列、被告彙整或單份判決的比對結果。"""
+    """單列、被告、應執行分組、個案或單份判決的比對結果。"""
     model_config = ConfigDict(strict=True, extra="forbid")
 
     status: Literal["equal", "unmatched", "judgment_not_found"]
@@ -45,6 +45,10 @@ class ComparisonResult(BaseModel):
     candidate_crime_ids: list[PositiveInt] = Field(default_factory=list)
     matched_candidates: list[MatchedCandidate] = Field(default_factory=list)
     document_results: list[Self] = Field(default_factory=list)
+    group_number: PositiveInt | None = None
+    crime_id: PositiveInt | None = None
+    group_results: list[Self] = Field(default_factory=list)
+    crime_results: list[Self] = Field(default_factory=list)
     excel_rows: list[ExcelRowLocation] = Field(default_factory=list)
     differences: list[ComparisonDifference] = Field(default_factory=list)
 
