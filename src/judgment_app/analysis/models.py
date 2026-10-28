@@ -126,7 +126,8 @@ class DefendantAnalysis(AnalysisModel):
     execution_groups: list["ExecutionGroup"] = Field(description=(
         "應執行刑分組，每組保存對應罪、應執行刑度及折算標準。"
         "有定應執行刑則依判決記載分組，不得推測罪與組的對應關係，應執行刑直接擷取所定刑度。"
-        "未定刑的罪依不同易科罰金、易服勞役標準分組，僅這些組以刑期乘times後加總。"
+        "未定刑的罪依不同易科罰金、易服勞役標準分組，僅這些組以刑期乘times後加總；"
+        "徒刑且相同易科標準的組和只有拘役且易科標準相同的組可以合併。"
         "無罪、免訴、不受理各自建一個組，應執行刑度與折算標準為null。"
     ))
     confiscation: list[str] | None = Field(default=None, description="沒收物品清單；金額以『幣種+數值+元』格式儲存")
@@ -170,6 +171,7 @@ class CrimeAnalysis(AnalysisModel):
         "若為加重則僅列詐欺犯罪危害防制條例，刑法不列入；若為減輕則僅列刑法，詐欺犯罪危害防制條例不列入。"
         "不要存幫助(例:刑法30條1項)、未遂(例:毒品危害防制條例4條6項)法條，"
         "直接以LawReference.is_accessory、LawReference.is_attempted欄位表示。"
+        "排除法條：道路交通管理處罰條例"
     ))
     penalty: PositiveInt | None = Field(default=None, description="徒刑月數，例如4年2月為50")
     penalty_to_fine: PositiveInt | None = Field(default=None, description="徒刑易科罰金每一日折算金額(元)")
