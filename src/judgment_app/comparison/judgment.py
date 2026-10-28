@@ -264,7 +264,7 @@ def _read_excel_cases(path: Path, report: dict, progress, *, workbooks: dict | N
                             raise ValueError(f"缺少執行明細欄位：{'、'.join(sorted(missing))}")
                         state["statuses"][sheet] = (header + 1, {})
                         supplied = {FIELD_MAP[column] for column in columns if column in FIELD_MAP}
-                        supplied.add("is_pros_appeal")  # 上訴類別與審級共同決定。
+                        supplied.add("is_pros_appeal")  # 上訴類別非空為 True，空白為 False。
                         defaulted = set().union(*SCALAR_FIELDS.values(), {"is_attempted", "is_accessory"}) - supplied
                         report["sheets"].append({
                             "file": str(source), "sheet": sheet,
@@ -581,7 +581,7 @@ def _row_values(row: dict, case: CaseNumber) -> dict:
             continue
         text = excel_optional_text(raw)
         if field in {"is_recidivist", "is_attempted", "is_accessory", "is_pros_appeal"}:
-            value = excel_bool(raw, column=column, blank=None if field == "is_pros_appeal" else False)
+            value = excel_bool(raw, column=column, blank=False)
         elif text is None:
             value = None
         elif field in {"crime_jsst", "executed_jsst"}:
@@ -603,10 +603,7 @@ def _row_values(row: dict, case: CaseNumber) -> dict:
         values[field] = value
         supplied.add(field)
     if "is_pros_appeal" not in supplied:
-        is_first_instance = "地方法院" in case.court_name and "上" not in case.case
-        values["is_pros_appeal"] = True if not _is_blank(row.get("上訴類別")) else (
-            None if is_first_instance else False
-        )
+        values["is_pros_appeal"] = not _is_blank(row.get("上訴類別"))
     return values
 
 

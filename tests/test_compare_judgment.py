@@ -518,16 +518,20 @@ class CompareJudgmentTests(unittest.TestCase):
                 self.assertEqual(report["summary"]["errors"], 1)
                 self.assertEqual(report["rows"][0]["status"], "unmatched")
 
-    def test_appeal_type_any_value_is_true_blank_depends_on_instance(self):
+    def test_appeal_type_any_value_is_true_blank_is_false(self):
         for value in ("01", "02", "任意非空", 0, 1):
             with self.subTest(value=value):
                 result = build_judgment_analysis(self.case, [{**self.row, "上訴類別": value}])
                 self.assertIs(result.defendants[0].is_pros_appeal, True)
-        for case, expected in ((self.case, False), ("臺灣臺北地方法院115年度審訴字第1號", None),
-                               ("臺灣臺北地方法院115年度簡上字第1號", False)):
-            with self.subTest(case=case):
-                result = build_judgment_analysis(case, [{**self.row, "上訴類別": None}])
-                self.assertIs(result.defendants[0].is_pros_appeal, expected)
+        for case in (self.case, "臺灣臺北地方法院115年度審訴字第1號", "臺灣臺北地方法院115年度簡上字第1號"):
+            for column in ("上訴類別", "檢察官上訴", "is_pros_appeal"):
+                for blank in (None, "", "  ", float('nan')):
+                    with self.subTest(case=case, column=column, blank=blank):
+                        result = build_judgment_analysis(case, [{**self.row, column: blank}])
+                        self.assertIs(result.defendants[0].is_pros_appeal, False)
+            row = {key: value for key, value in self.row.items() if key != "上訴類別"}
+            result = build_judgment_analysis(case, [row])
+            self.assertIs(result.defendants[0].is_pros_appeal, False)
 
     def test_sentence_units_rates_and_invalid_months_days(self):
         for raw, expected in ((0, None), (300, 3), (10200, 14), (300000, 360)):
