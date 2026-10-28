@@ -26,6 +26,11 @@ IGNORED_FIELDS = frozenset({
     "crime_ids", "crime_id", "crime_name",
 
 })
+# 比對原因顯示名稱；新增「模型欄位: 顯示名稱」即可，未設定的欄位保留原路徑。
+REASON_FIELD_NAMES = {
+    "is_pros_appeal": "上訴類別",
+    "is_recidivist": "累犯",
+}
 FIELD_MAP = {
     "累犯": "is_recidivist", "應執緩刑期間": "probation", "緩刑法條": "probation_law",
     "應執裁判情形": "executed_jsst", "應執徒刑": "executed_penalty",
@@ -406,7 +411,11 @@ def _comparison_result(differences: list[dict]) -> dict:
         fields = dict.fromkeys(field for difference in differences for field in _difference_fields(
             difference["excel"], difference["json"], difference["field"],
         ))
-        reason = "；".join(f"{field} 不合" for field in fields)
+        reason = "；".join(
+            f"{REASON_FIELD_NAMES[field.rsplit('.', 1)[-1]]}不合"
+            if field.rsplit('.', 1)[-1] in REASON_FIELD_NAMES else f"{field} 不合"
+            for field in fields
+        )
         return {"status": "unmatched", "reason": reason, "differences": differences}
     return {"status": "equal", "differences": []}
 

@@ -237,7 +237,13 @@ class CompareJudgmentTests(unittest.TestCase):
                 self.assertEqual(result["status"], "unmatched")
                 self.assertTrue(result["differences"])
                 if path == ("defendants", 0):
-                    self.assertIn(field, result["reason"])
+                    if field == "is_pros_appeal":
+                        self.assertEqual(result["reason"], "上訴類別不合")
+                    elif field == "is_recidivist":
+                        self.assertEqual(result["reason"], "累犯不合")
+                    else:
+                        self.assertIn(field, result["reason"])
+                    self.assertEqual(result["differences"][0]["field"], f"defendants[0].{field}")
                 elif "execution_groups" in path:
                     self.assertEqual(result["reason"], "應執情形不合")
                 elif "laws" in path:
@@ -250,12 +256,14 @@ class CompareJudgmentTests(unittest.TestCase):
                     self.assertEqual(result["reason"], "個案情形不合")
 
     def test_specific_reasons_are_written_to_excel(self):
+        self.data['defendants'][0]['is_pros_appeal'] = False
+        self.data['defendants'][0]['is_recidivist'] = True
         self.data['defendants'][0]['probation'] = 4
         self.data['defendants'][0]['crimes'][0]['times'] = 5
         self.data['defendants'][0]['crimes'][0]['laws'][0]['article'] = 340
         report = self.run_report()
         reason = report['rows'][0]['reason']
-        self.assertEqual(reason, 'defendants[0].probation 不合')
+        self.assertEqual(reason, '上訴類別不合；累犯不合；defendants[0].probation 不合')
         self.assertNotIn('group_results', report['rows'][0]['document_results'][0])
 
     def test_crime_length_is_ignored_but_fields_must_match_one_candidate(self):
