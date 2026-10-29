@@ -110,7 +110,7 @@ class DefendantAnalysis(AnalysisModel):
     name: NonBlankStr = Field(description="被告姓名，若為英文或外籍姓名請保留原文")
     is_recidivist: bool = Field(description="是否累犯，判決內容有說明為累犯但沒有加重刑度仍為true")
     is_pros_appeal: bool = Field(description=(
-        "不論目標判決為何，只要歷審的「二審」上訴人有檢察署，該二審判決內的被告此欄位即為true；"
+        "不論目標判決為何，只要目標判決的直接前審的「二審」上訴人有檢察署，該二審判決內的被告此欄位即為true；"
         "目標判決為一審則為false"
     ))
     appeal_result: str | None = Field(default=None, description="上訴結果；一審為null")
