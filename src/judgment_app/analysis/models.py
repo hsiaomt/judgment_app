@@ -24,6 +24,7 @@ LAW_NAME_ALIASES = {
     "兒少性剝削": "兒童及少年性剝削防制條例",
     "電遊場業管理": "電子遊戲場業管理條例",
     "家庭暴力防治": "家庭暴力防治法",
+    "人口販運防制": "人口販運防制法",
     "個人資料保護": "個人資料保護法",
     "證券投資信託": "證券投資信託及顧問法",
 }
@@ -132,6 +133,9 @@ class DefendantAnalysis(AnalysisModel):
         "無罪、免訴、不受理各自建一個組，應執行刑度與折算標準為null。"
     ))
     confiscation: list[str] | None = Field(default=None, description="沒收物品清單；金額以『幣種+數值+元』格式儲存")
+    occupation: str | None = Field(default=None, description="職業；若判決書無明示則為null")
+    education_level: str | None = Field(default=None, description="學歷；若有畢業、肄業需填寫(例如:高中肄業)，若判決書無明示則為null")
+    family_finance: str | None = Field(default=None, description="家庭經濟狀況；內容為貧困、勉維生活、小康之家、中產以上之一(可依照敘述推論)，若判決書無明示則為null")
 
 
 class ExecutionGroup(AnalysisModel):

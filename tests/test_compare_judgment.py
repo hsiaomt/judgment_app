@@ -203,6 +203,26 @@ class CompareJudgmentTests(unittest.TestCase):
         self.row.update(蒞庭檢察官="忽略", 上訴結果="忽略", 個案併科罰金="忽略")
         self.assertEqual(self.run_report()["rows"][0]["status"], "equal")
 
+    def test_defendant_background_fields_are_ignored(self):
+        fields = {
+            "occupation": ("職業", "工人"),
+            "education_level": ("教育程度", "高中肄業"),
+            "family_finance": ("家庭經濟狀況", "勉維生活"),
+        }
+        for field, (label, value) in fields.items():
+            self.data["defendants"][0][field] = value
+            for column in (None, field, label):
+                with self.subTest(field=field, column=column):
+                    row = dict(self.row)
+                    if column is not None:
+                        row[column] = "不同的資料"
+                    report = self.run_report([row])
+                    self.assertEqual(report["summary"], {"equal": 1, "total": 1, "errors": 0})
+                    self.assertIn(field, report["ignored_fields"])
+                    self.assertNotIn(field, report["sheets"][0]["defaulted_fields"])
+                    if column is not None:
+                        self.assertIn(column, report["sheets"][0]["uncompared_columns"])
+
     def test_nonignored_fields_are_compared(self):
         mutations = [
             ((), "case_number", "臺灣高等法院115年度上訴字第1300號"),

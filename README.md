@@ -142,7 +142,7 @@ uv run python -m judgment_app.comparison.judgment --excel data/執行明細.xlsx
 - 先核對案號，再沿用 `law_penalty.py` 的遮蔽姓名規則；每名 Excel 被告須在該份 JSON 中有唯一配對。JSON 額外被告及雙方被告總人數不影響結果。該被告的 `crimes` 不比較清單長度：每個 Excel 罪須有一個完整相符的 JSON 罪，可重用候選，JSON 額外罪不影響結果。單罪的 `times`、裁判情形、刑度、法條仍比較，不能從不同候選各取相符欄位；法條清單仍不計順序但保留數量。執行刑 group 採上述存在配對規則；無罪、免訴、不受理與免刑也比較。
 - 「上訴類別」任何非空值都代表 `is_pros_appeal=True`。空白時，地方法院且案號冠字無「上」視為一審並填 `None`，其餘填 `False`。
 
-忽略欄位：`lower_court_case_number`（需求中的 `lower_case_number`）、`confiscation`、`crime_ids`、`crime_id`、`crime_name`、`pros_appearing`、`appeal_result`、`addition_fine`、`addition_fine_to_detention`、`executed_addition_fine`、`executed_addition_fine_to_detention`。讀取 JSON 時先移除忽略的選填欄位，因此也能讀取仍含舊併科罰金欄位的資料；必要的 ID 與罪名仍接受模型驗證，只是不參與內容比較。
+忽略欄位：`lower_court_case_number`（需求中的 `lower_case_number`）、`confiscation`、`crime_ids`、`crime_id`、`crime_name`、`pros_appearing`、`appeal_result`、`occupation`（職業）、`education_level`（教育程度）、`family_finance`（家庭經濟狀況）、`addition_fine`、`addition_fine_to_detention`、`executed_addition_fine`、`executed_addition_fine_to_detention`。讀取 JSON 時先移除忽略的選填欄位，因此也能讀取仍含舊併科罰金欄位的資料；必要的 ID 與罪名仍接受模型驗證，只是不參與內容比較。
 
 格式轉換依執行明細表：
 

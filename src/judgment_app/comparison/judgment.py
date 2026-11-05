@@ -24,7 +24,7 @@ IGNORED_FIELDS = frozenset({
     "lower_court_case_number", "pros_appearing",
     "appeal_result", "confiscation",
     "crime_ids", "crime_id", "crime_name",
-
+    "occupation", "education_level", "family_finance",
 })
 # 比對原因顯示名稱；新增「模型欄位: 顯示名稱」即可，未設定的欄位保留原路徑。
 REASON_FIELD_NAMES = {
