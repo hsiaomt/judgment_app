@@ -133,6 +133,7 @@ class DefendantAnalysis(AnalysisModel):
         "無罪、免訴、不受理各自建一個組，應執行刑度與折算標準為null。"
     ))
     confiscation: list[str] | None = Field(default=None, description="沒收物品清單；金額以『幣種+數值+元』格式儲存")
+    offense_date: str | None = Field(default=None, description="犯罪日期；若判決書無明示則為null")
     occupation: str | None = Field(default=None, description="職業；若判決書無明示則為null")
     education_level: str | None = Field(default=None, description="學歷；若有畢業、肄業需填寫(例如:高中肄業)，若判決書無明示則為null")
     family_finance: str | None = Field(default=None, description="家庭經濟狀況；內容為貧困、勉維生活、小康之家、中產以上之一(可依照敘述推論)，若判決書無明示則為null")
@@ -147,8 +148,8 @@ class ExecutionGroup(AnalysisModel):
     executed_detention_to_fine: PositiveInt | None = Field(default=None, description="應執行拘役易科罰金每一日折算金額(元)")
     executed_fine: PositiveInt | None = Field(default=None, description="應執行罰金金額(元)")
     executed_fine_to_detention: PositiveInt | None = Field(default=None, description="應執行罰金易服勞役每一日折算金額(元)")
-    #executed_addition_fine: PositiveInt | None = Field(default=None, description="應執行併科罰金金額(元)")
-    #executed_addition_fine_to_detention: PositiveInt | None = Field(default=None, description="應執行併科罰金易服勞役每一日折算金額(元)")
+    executed_addition_fine: PositiveInt | None = Field(default=None, description="應執行併科罰金金額(元)")
+    executed_addition_fine_to_detention: PositiveInt | None = Field(default=None, description="應執行併科罰金易服勞役每一日折算金額(元)")
 
     @field_validator("crime_ids")
     @classmethod
@@ -184,8 +185,8 @@ class CrimeAnalysis(AnalysisModel):
     detention_to_fine: PositiveInt | None = Field(default=None, description="拘役易科罰金每一日折算金額(元)")
     fine: PositiveInt | None = Field(default=None, description="罰金金額(元)")
     fine_to_detention: PositiveInt | None = Field(default=None, description="罰金易服勞役每一日折算金額(元)")
-    #addition_fine: PositiveInt | None = Field(default=None, description="併科罰金金額(元)")
-    #addition_fine_to_detention: PositiveInt | None = Field(default=None, description="併科罰金易服勞役每一日折算金額(元)")
+    addition_fine: PositiveInt | None = Field(default=None, description="併科罰金金額(元)")
+    addition_fine_to_detention: PositiveInt | None = Field(default=None, description="併科罰金易服勞役每一日折算金額(元)")
 
 
 class LawReference(AnalysisModel):
